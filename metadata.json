@@ -1,0 +1,14 @@
+{
+  "description": "Compiz alike wobbly windows effect",
+  "name": "Compiz alike windows effect",
+  "shell-version": [
+    "3.28",
+    "3.30",
+    "3.32",
+    "3.34",
+    "3.36"
+  ],
+  "url": "https://github.com/hermes83/compiz-alike-windows-effect",
+  "uuid": "compiz-alike-windows-effect@hermes83.github.com",
+  "version": 2
+}
