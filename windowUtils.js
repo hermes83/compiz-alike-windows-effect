@@ -10,7 +10,7 @@ const Y_MULTIPLIER = 1.1;
 const X_MULTIPLIER_RESIZE = 0.3;
 const Y_MULTIPLIER_RESIZE = 0.3;
 const RADIUS = 100;
-const BONCE_ENABLED = true;
+// const BOUNCE_ENABLED = true;
 
 var WobblyEffect = GObject.registerClass({}, 
     class WobblyEffect extends Clutter.DeformEffect {
@@ -29,6 +29,8 @@ var WobblyEffect = GObject.registerClass({},
             this.yDelta = 0;
             this.xPickedUp = 0;
             this.yPickedUp = 0;
+            this.width = 0;
+            this.height = 0;
             this.i = 0;
         }
 
@@ -58,16 +60,19 @@ var WobblyEffect = GObject.registerClass({},
         }
 
         on_stop() {
-            this.stop = true;            
+            this.stop = true;      
         }        
 
         on_actor_event (actor, allocation, flags) {     
+            let [width, height] = actor.get_size();
             let [xWin, yWin] = actor.get_position();
             let [xNew, yNew] = global.get_pointer();
 
             if (this.initOldValues) {
                 this.xOld = xNew;
                 this.yOld = yNew;          
+                this.xPickedUp = xNew - xWin;
+                this.yPickedUp = yNew - yWin;
                 this.initOldValues = false;     
             }
             
@@ -77,27 +82,30 @@ var WobblyEffect = GObject.registerClass({},
             } else {
                 this.xDelta += (this.xOld - xNew) * X_MULTIPLIER_RESIZE;
                 this.yDelta += (this.yOld - yNew) * Y_MULTIPLIER_RESIZE;
-            }
+            } 
 
             this.xOld = xNew;
             this.yOld = yNew;
-            this.xPickedUp = xNew - xWin;
-            this.yPickedUp = yNew - yWin;
+            this.width = width;
+            this.height = height;
 
             this.i = 0;
         }
 
         on_tick_elapsed () {
-            this.i++;
+            // this.i++;
 
-            if ((Math.abs(this.xDelta) < 1 && Math.abs(this.yDelta) < 1) || this.stop) {
-                this.xDelta = this.xDelta / RESTORE_X_FACTOR - (BONCE_ENABLED ? 80 * Math.sin(this.i / 1.7) / (this.i * 5.5 + 1) : 0);
-                this.yDelta = this.yDelta / RESTORE_Y_FACTOR - (BONCE_ENABLED ? 80 * Math.sin(this.i / 1.7) / (this.i * 5.5 + 1) : 0);
-            
-            } else if (Meta.GrabOp.MOVING == this.operationType) {
+            // if (this.stop) {
+            //     this.xDelta = this.xDelta / RESTORE_X_FACTOR - (BOUNCE_ENABLED ? this.width * Math.cos(this.i / 2) / (this.i * 25) : 0);
+            //     this.yDelta = this.yDelta / RESTORE_Y_FACTOR - (BOUNCE_ENABLED ? this.height * Math.cos(this.i / 2) / (this.i * 25) : 0);
+            // } else if (Meta.GrabOp.MOVING == this.operationType) {
+            //     this.xDelta /= RESTORE_X_FACTOR;
+            //     this.yDelta /= RESTORE_Y_FACTOR;            
+            // }
+
+            if (this.stop || Meta.GrabOp.MOVING == this.operationType) {
                 this.xDelta /= RESTORE_X_FACTOR;
                 this.yDelta /= RESTORE_Y_FACTOR;
-            
             }
 
             this.invalidate();
@@ -111,7 +119,15 @@ var WobblyEffect = GObject.registerClass({},
             switch (this.operationType) {
                 case Meta.GrabOp.MOVING:
                     v.x += this.xDelta * (this.xDelta > 0 ? x + (w - x) * 1.5 : x * 1.5 + (w - x)) * Math.pow(y, 2) / (Math.pow(h, 2) * w);
-                    v.y -= this.yDelta * Math.pow(this.xPickedUp > w / 2 ? x :  w - x, 2) / Math.pow(w, 2) - this.yDelta;
+
+                    if (this.xPickedUp <= w / 3) {
+                        v.y -= this.yDelta * Math.pow(w - x, 2) / Math.pow(w, 2) - this.yDelta;
+                    } else if ( this.xPickedUp <= w * 2 / 3) {
+                        v.y += this.yDelta * Math.pow(x - this.xPickedUp, 2) / Math.pow(this.xPickedUp, 2);
+                    } else {
+                        v.y -= this.yDelta * Math.pow(x, 2) / Math.pow(w, 2) - this.yDelta;
+                    }
+                    
                     break;                  
 
                 case Meta.GrabOp.RESIZING_NW:
@@ -135,19 +151,19 @@ var WobblyEffect = GObject.registerClass({},
                     break;
                 
                 case Meta.GrabOp.RESIZING_W:
-                    v.x += this.xDelta * (w - x) * Math.pow(this.yPickedUp > h / 2 ? h - y : y, 2) / (Math.pow(h, 2) * w);
+                    v.x += this.xDelta * (w - x) * Math.pow(y - this.yPickedUp, 2) / (Math.pow(h, 2) * w);
                     break;
 
                 case Meta.GrabOp.RESIZING_E:
-                    v.x += this.xDelta * x * Math.pow(this.yPickedUp > h / 2 ? h - y : y, 2) / (Math.pow(h, 2) * w);
+                    v.x += this.xDelta * x * Math.pow(y - this.yPickedUp, 2) / (Math.pow(h, 2) * w);
                     break;
 
                 case Meta.GrabOp.RESIZING_S:
-                    v.y += this.yDelta * y * Math.pow(this.xPickedUp > w / 2 ? w - x : x, 2) / (Math.pow(w, 2) * h);
+                    v.y += this.yDelta * y * Math.pow(x - this.xPickedUp, 2) / (Math.pow(w, 2) * h);
                     break;
 
                 case Meta.GrabOp.RESIZING_N:
-                    v.y += this.yDelta * (h - y) * Math.pow(this.xPickedUp > w / 2 ? w - x : x, 2) / (Math.pow(w, 2) * h);
+                    v.y += this.yDelta * (h - y) * Math.pow(x - this.xPickedUp, 2) / (Math.pow(w, 2)* h);
                     break;
             }
         }    
