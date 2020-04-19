@@ -5,7 +5,7 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const WindowUtils = Me.imports.windowUtils;
 
-const TIMEOUT_DELAY = 2500;
+const TIMEOUT_DELAY = 1500;
 
 let grabOpBeginId;
 let grabOpEndId;

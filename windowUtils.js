@@ -3,14 +3,14 @@
 const { GObject, Clutter, Meta } = imports.gi;
 
 const DURATION = 1000 * 1000;
-const RESTORE_X_FACTOR = 1.3;
-const RESTORE_Y_FACTOR = 1.3;
-const X_MULTIPLIER = 1.1;
-const Y_MULTIPLIER = 1.1;
-const X_MULTIPLIER_RESIZE = 0.3;
-const Y_MULTIPLIER_RESIZE = 0.3;
+const RESTORE_X_FACTOR = 1.2;
+const RESTORE_Y_FACTOR = 1.2;
+const X_MULTIPLIER = 1.4;
+const Y_MULTIPLIER = 1.4;
+const X_MULTIPLIER_RESIZE = 0.8;
+const Y_MULTIPLIER_RESIZE = 0.8;
 const RADIUS = 100;
-// const BOUNCE_ENABLED = true;
+const BOUNCE_ENABLED = true;
 
 var WobblyEffect = GObject.registerClass({}, 
     class WobblyEffect extends Clutter.DeformEffect {
@@ -27,6 +27,8 @@ var WobblyEffect = GObject.registerClass({},
             this.yOld = null;
             this.xDelta = 0;
             this.yDelta = 0;
+            this.xDeltaStop = 0;
+            this.yDeltaStop = 0;
             this.xPickedUp = 0;
             this.yPickedUp = 0;
             this.width = 0;
@@ -60,6 +62,9 @@ var WobblyEffect = GObject.registerClass({},
         }
 
         on_stop() {
+            this.i = 0;
+            this.xDeltaStop = Math.abs(this.xDelta);
+            this.yDeltaStop = Math.abs(this.yDelta);
             this.stop = true;      
         }        
 
@@ -88,24 +93,17 @@ var WobblyEffect = GObject.registerClass({},
             this.yOld = yNew;
             this.width = width;
             this.height = height;
-
-            this.i = 0;
         }
 
         on_tick_elapsed () {
-            // this.i++;
+            this.i++;
 
-            // if (this.stop) {
-            //     this.xDelta = this.xDelta / RESTORE_X_FACTOR - (BOUNCE_ENABLED ? this.width * Math.cos(this.i / 2) / (this.i * 25) : 0);
-            //     this.yDelta = this.yDelta / RESTORE_Y_FACTOR - (BOUNCE_ENABLED ? this.height * Math.cos(this.i / 2) / (this.i * 25) : 0);
-            // } else if (Meta.GrabOp.MOVING == this.operationType) {
-            //     this.xDelta /= RESTORE_X_FACTOR;
-            //     this.yDelta /= RESTORE_Y_FACTOR;            
-            // }
-
-            if (this.stop || Meta.GrabOp.MOVING == this.operationType) {
+            if (this.stop && BOUNCE_ENABLED) {
+                this.xDelta = this.xDeltaStop * Math.sin(this.i) / Math.exp(this.i / 4, 2);
+                this.yDelta = this.yDeltaStop * Math.sin(this.i) / Math.exp(this.i / 4, 2);
+            } else if (this.stop || Meta.GrabOp.MOVING == this.operationType) {
                 this.xDelta /= RESTORE_X_FACTOR;
-                this.yDelta /= RESTORE_Y_FACTOR;
+                this.yDelta /= RESTORE_Y_FACTOR;            
             }
 
             this.invalidate();
@@ -123,7 +121,7 @@ var WobblyEffect = GObject.registerClass({},
                     if (this.xPickedUp <= w / 3) {
                         v.y -= this.yDelta * Math.pow(w - x, 2) / Math.pow(w, 2) - this.yDelta;
                     } else if ( this.xPickedUp <= w * 2 / 3) {
-                        v.y += this.yDelta * Math.pow(x - this.xPickedUp, 2) / Math.pow(this.xPickedUp, 2);
+                        v.y += 3 * this.yDelta * Math.pow(x - this.xPickedUp, 2) / Math.pow(w, 2);
                     } else {
                         v.y -= this.yDelta * Math.pow(x, 2) / Math.pow(w, 2) - this.yDelta;
                     }
