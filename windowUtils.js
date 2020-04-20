@@ -3,14 +3,13 @@
 const { GObject, Clutter, Meta } = imports.gi;
 
 const DURATION = 1000 * 1000;
-const RESTORE_X_FACTOR = 1.2;
-const RESTORE_Y_FACTOR = 1.2;
-const X_MULTIPLIER = 1.4;
-const Y_MULTIPLIER = 1.4;
+const RESTORE_X_FACTOR = 1.4;
+const RESTORE_Y_FACTOR = 1.4;
+const X_MULTIPLIER = 1.2;
+const Y_MULTIPLIER = 1.2;
 const X_MULTIPLIER_RESIZE = 0.8;
 const Y_MULTIPLIER_RESIZE = 0.8;
 const RADIUS = 100;
-const BOUNCE_ENABLED = true;
 
 var WobblyEffect = GObject.registerClass({}, 
     class WobblyEffect extends Clutter.DeformEffect {
@@ -33,6 +32,8 @@ var WobblyEffect = GObject.registerClass({},
             this.yPickedUp = 0;
             this.width = 0;
             this.height = 0;
+            this.coeff1 = null;
+            this.coeff2 = null;
             this.i = 0;
         }
 
@@ -40,12 +41,16 @@ var WobblyEffect = GObject.registerClass({},
             if (actor) {
                 super.vfunc_set_actor(actor);
                 this.parentActor = actor.get_parent();
-                
-                actor.connect('allocation-changed', this.on_actor_event.bind(this))
 
-                this.timerId = new Clutter.Timeline({ duration: DURATION });
+                let [width, height] = actor.get_size();
+                this.coeff1 = Math.pow(height, 2) * width;
+                this.coeff2 = Math.pow(width, 2) * height;
+                
+                this.timerId = new Clutter.Timeline({duration: DURATION});
                 this.timerId.connect('new-frame', this.on_tick_elapsed.bind(this));
                 this.timerId.start();
+
+                actor.connect('allocation-changed', this.on_actor_event.bind(this));
             }
         }
 
@@ -93,15 +98,17 @@ var WobblyEffect = GObject.registerClass({},
             this.yOld = yNew;
             this.width = width;
             this.height = height;
+
+            this.i = 0;
         }
 
         on_tick_elapsed () {
             this.i++;
-
-            if (this.stop && BOUNCE_ENABLED) {
+            
+            if (this.stop) {
                 this.xDelta = this.xDeltaStop * Math.sin(this.i) / Math.exp(this.i / 4, 2);
                 this.yDelta = this.yDeltaStop * Math.sin(this.i) / Math.exp(this.i / 4, 2);
-            } else if (this.stop || Meta.GrabOp.MOVING == this.operationType) {
+            } else if (Meta.GrabOp.MOVING == this.operationType) {
                 this.xDelta /= RESTORE_X_FACTOR;
                 this.yDelta /= RESTORE_Y_FACTOR;            
             }
@@ -116,16 +123,16 @@ var WobblyEffect = GObject.registerClass({},
 
             switch (this.operationType) {
                 case Meta.GrabOp.MOVING:
-                    v.x += this.xDelta * (this.xDelta > 0 ? x + (w - x) * 1.5 : x * 1.5 + (w - x)) * Math.pow(y, 2) / (Math.pow(h, 2) * w);
+                    v.x += this.xDelta * (this.xDelta > 0 ? x + (w - x) * 1.5 : x * 1.5 + (w - x)) * Math.pow(y, 2) / this.coeff1;
 
-                    if (this.xPickedUp <= w / 3) {
-                        v.y -= this.yDelta * Math.pow(w - x, 2) / Math.pow(w, 2) - this.yDelta;
+                    if (this.xPickedUp < w / 3) {
+                        v.y = v.y * (this.yDelta / h + 1) - (this.yDelta * Math.pow(w - x, 2) * (h -  y) / this.coeff2 - this.yDelta); 
                     } else if ( this.xPickedUp <= w * 2 / 3) {
-                        v.y += 3 * this.yDelta * Math.pow(x - this.xPickedUp, 2) / Math.pow(w, 2);
+                        v.y = v.y * (this.yDelta / h + 1) + 2 * this.yDelta * Math.pow((x - this.xPickedUp) , 2) * (h -  y) / this.coeff2;
                     } else {
-                        v.y -= this.yDelta * Math.pow(x, 2) / Math.pow(w, 2) - this.yDelta;
-                    }
-                    
+                        v.y = v.y * (this.yDelta / h + 1) - (this.yDelta * Math.pow(x, 2) * (h -  y) / this.coeff2 - this.yDelta);
+                    }       
+
                     break;                  
 
                 case Meta.GrabOp.RESIZING_NW:
