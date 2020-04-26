@@ -273,11 +273,12 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
         on_tick_elapsed() {
             this.i++;
 
-            this.xDelta = 300 * Math.sin(this.i) / Math.exp(this.i / 4, 2);
-            this.yDelta = 300 * Math.sin(this.i) / Math.exp(this.i / 4, 2);
+            this.xDelta = 300 * Math.sin(this.i * 2.5) / Math.exp(this.i / 3, 2);
+            this.yDelta = 300 * Math.sin(this.i * 2.5) / Math.exp(this.i / 3, 2);
         
             this.invalidate();
-        
+            this.parentActor.queue_redraw();
+
             return true;
         }
         
