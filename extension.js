@@ -9,7 +9,9 @@ const TIMEOUT_DELAY = 1500;
 
 let grabOpBeginId;
 let grabOpEndId;
-let timeoutId;
+let resizeMinMaxOpId;
+let timeoutWobblyId;
+let timeoutMinMaxId;
 
 function enable() {
     grabOpBeginId = global.display.connect('grab-op-begin', (display, screen, window, op) => {
@@ -19,41 +21,67 @@ function enable() {
 
         let actor = Utils.get_actor(window);
         if (actor) {
-            stop_timer();            
-            Utils.destroy_effect(window);
-            Utils.add_effect(window, op);
+            stop_wobbly_timer();            
+            stop_min_max_timer();
+            
+            Utils.destroy_actor_wobbly_effect(actor);
+            Utils.destroy_actor_min_max_effect(actor);
+            Utils.add_actor_wobbly_effect(actor, op);
         }
     });
 
     grabOpEndId = global.display.connect('grab-op-end', (display, screen, window, op) => {  
         let actor = Utils.get_actor(window);
         if (actor) {
-            Utils.stop_effect(window);              
-            
-            timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TIMEOUT_DELAY, () => {
-                stop_timer();
-                Utils.destroy_effect(window);
+            Utils.stop_wobbly_effect(window);
+
+            timeoutWobblyId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TIMEOUT_DELAY, () => {
+                stop_wobbly_timer();
+                Utils.destroy_wobbly_effect(window);
 
                 return false;
             });
         }
+    });
+
+    resizeMinMaxOpId = global.window_manager.connect('size-change', (e, actor, op) => {
+        stop_min_max_timer();            
+
+        Utils.destroy_actor_min_max_effect(actor);
+        Utils.add_actor_min_max_effect(actor, op);
+        
+        timeoutMinMaxId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TIMEOUT_DELAY, () => {
+            stop_min_max_timer();
+            Utils.destroy_actor_min_max_effect(actor);
+
+            return false;
+        });
     });
 }
 
 function disable() {
     global.display.disconnect(grabOpBeginId);
     global.display.disconnect(grabOpEndId);
+    global.display.disconnect(resizeMinMaxOpId);
     
-    stop_timer();
+    stop_wobbly_timer();
     
     global.get_window_actors().forEach((actor) => {
-        Utils.destroy_actor_effect(actor);
+        Utils.destroy_actor_wobbly_effect(actor);
+        Utils.destroy_actor_min_max_effect(actor);
     });
 }
 
-function stop_timer() {
-    if (timeoutId) {
-        GLib.source_remove(timeoutId);
-        timeoutId = 0;
+function stop_wobbly_timer() {
+    if (timeoutWobblyId) {
+        GLib.source_remove(timeoutWobblyId);
+        timeoutWobblyId = 0;
+    }
+}
+
+function stop_min_max_timer() {
+    if (timeoutMinMaxId) {
+        GLib.source_remove(timeoutMinMaxId);
+        timeoutMinMaxId = 0;
     }
 }

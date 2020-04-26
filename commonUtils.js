@@ -6,6 +6,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 const Effects = Me.imports.effects;
 
 const EFFECT_NAME = 'wobbly-effect';
+const MIN_MAX_EFFECT_NAME = 'min-max-wobbly-effect';
 
 var is_managed_op = function (op) {
     return Meta.GrabOp.MOVING == op ||
@@ -22,18 +23,7 @@ var get_actor = function(window) {
     return null;
 }
 
-var get_actor_effect = function (window) {
-    if (window) {
-        let actor = window.get_compositor_private();
-        if (actor) {
-            return actor.get_effect(EFFECT_NAME);
-        }
-    }
-    return null;
-}
-
-var add_effect = function (window, op) { 
-    let actor = get_actor(window);
+var add_actor_wobbly_effect = function (actor, op) { 
     if (actor) {
         if (Meta.GrabOp.MOVING == op) {
             actor.add_effect_with_name(EFFECT_NAME, new Effects.WobblyEffect({op: op}));
@@ -43,23 +33,44 @@ var add_effect = function (window, op) {
     }
 }
 
-var stop_effect = function (window) {
-    let effect = get_actor_effect(window);
-    if (effect) {
-        effect.stop();
+var add_actor_min_max_effect = function (actor, op) { 
+    if (actor) {
+        actor.add_effect_with_name(MIN_MAX_EFFECT_NAME, new Effects.MinimizeMaximizeEffect({op: op}));
     }
 }
 
-var destroy_effect = function (window) {
-    let effect = get_actor_effect(window);
-    if (effect) {
-        effect.destroy();
-    }
-}
-
-var destroy_actor_effect = function (actor) {
+var stop_wobbly_effect = function (window) {
+    let actor = get_actor(window);
     if (actor) {
         let effect = actor.get_effect(EFFECT_NAME);
+        if (effect) {
+            effect.stop();
+        }
+    }
+}
+
+var destroy_wobbly_effect = function (window) {
+    let actor = get_actor(window);
+    if (actor) {
+        let effect = actor.get_effect(EFFECT_NAME);
+        if (effect) {
+            effect.destroy();
+        }
+    }
+}
+
+var destroy_actor_wobbly_effect = function (actor) {
+    if (actor) {
+        let effect = actor.get_effect(EFFECT_NAME);
+        if (effect) {
+            effect.destroy();
+        }
+    }
+}
+
+var destroy_actor_min_max_effect = function (actor) {
+    if (actor) {
+        let effect = actor.get_effect(MIN_MAX_EFFECT_NAME);
         if (effect) {
             effect.destroy();
         }

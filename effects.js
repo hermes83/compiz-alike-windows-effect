@@ -84,7 +84,7 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.timerId = new Clutter.Timeline({ duration: CLUTTER_TIMELINE_DURATION });
             this.timerId.connect('new-frame', this.on_stop_tick_elapsed.bind(this));
             this.timerId.start();        
-    }
+        }
 
         on_stop_tick_elapsed() {
             this.i++;
@@ -178,8 +178,8 @@ var WobblyEffect = GObject.registerClass({},
             if (this.i % 300 == 0) {
                 this.parentActor.queue_redraw();
                 this.i=0;
-            } else if ((Math.abs(this.xDelta) < 80 && Math.abs(this.xDelta) > 10) || 
-                    (Math.abs(this.yDelta) < 80 && Math.abs(this.yDelta) > 10)) {
+            } else if ((Math.abs(this.xDelta) < 80 && Math.abs(this.xDelta) > 20) || 
+                    (Math.abs(this.yDelta) < 80 && Math.abs(this.yDelta) > 20)) {
                 this.partial_redraw(80, 80, this.xDelta <= 0, this.xDelta >= 0, this.yDelta <=0, this.yDelta >= 0);
             }
 
@@ -256,6 +256,35 @@ var ResizeEffect = GObject.registerClass({},
                     v.y += this.yDelta * (h - v.y) * Math.pow(v.x - this.xPickedUp, 2) / (Math.pow(w, 2)* h);
                     break;                
             }
+        }
+
+    }
+);
+
+var MinimizeMaximizeEffect = GObject.registerClass({},
+    class MinimizeMaximizeEffect extends AbstractCommonEffect {
+
+        _init(params = {}) {
+            super._init(params);
+        }
+
+        on_actor_event(actor, allocation, flags) {}
+
+        on_tick_elapsed() {
+            this.i++;
+
+            this.xDelta = 300 * Math.sin(this.i) / Math.exp(this.i / 4, 2);
+            this.yDelta = 300 * Math.sin(this.i) / Math.exp(this.i / 4, 2);
+        
+            this.invalidate();
+            this.parentActor.queue_redraw();
+        
+            return true;
+        }
+        
+        vfunc_deform_vertex(w, h, v) {
+            v.x += this.xDelta * (v.x - w/2) * v.y / (h * w);
+            v.y += this.yDelta * (v.y - h/2) * v.x / (w * h);
         }
 
     }
