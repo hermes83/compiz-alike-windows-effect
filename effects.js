@@ -178,8 +178,8 @@ var WobblyEffect = GObject.registerClass({},
             if (this.i % 300 == 0) {
                 this.parentActor.queue_redraw();
                 this.i=0;
-            } else if ((Math.abs(this.xDelta) < 80 && Math.abs(this.xDelta) > 20) || 
-                    (Math.abs(this.yDelta) < 80 && Math.abs(this.yDelta) > 20)) {
+            } else if ((Math.abs(this.xDelta) < 80 && Math.abs(this.xDelta) > 15) || 
+                    (Math.abs(this.yDelta) < 80 && Math.abs(this.yDelta) > 15)) {
                 this.partial_redraw(80, 80, this.xDelta <= 0, this.xDelta >= 0, this.yDelta <=0, this.yDelta >= 0);
             }
 
@@ -277,7 +277,6 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
             this.yDelta = 300 * Math.sin(this.i) / Math.exp(this.i / 4, 2);
         
             this.invalidate();
-            this.parentActor.queue_redraw();
         
             return true;
         }

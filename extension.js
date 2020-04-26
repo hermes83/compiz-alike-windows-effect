@@ -33,11 +33,15 @@ function enable() {
     grabOpEndId = global.display.connect('grab-op-end', (display, screen, window, op) => {  
         let actor = Utils.get_actor(window);
         if (actor) {
-            Utils.stop_wobbly_effect(window);
+            Utils.stop_actor_wobbly_effect(actor);
 
             timeoutWobblyId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TIMEOUT_DELAY, () => {
                 stop_wobbly_timer();
-                Utils.destroy_wobbly_effect(window);
+
+                let actor = Utils.get_actor(window);
+                if (actor) {
+                    Utils.destroy_actor_wobbly_effect(actor);
+                }
 
                 return false;
             });
@@ -52,7 +56,10 @@ function enable() {
         
         timeoutMinMaxId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TIMEOUT_DELAY, () => {
             stop_min_max_timer();
-            Utils.destroy_actor_min_max_effect(actor);
+
+            if (actor) {
+                Utils.destroy_actor_min_max_effect(actor);
+            }
 
             return false;
         });

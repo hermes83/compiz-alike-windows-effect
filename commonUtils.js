@@ -39,22 +39,11 @@ var add_actor_min_max_effect = function (actor, op) {
     }
 }
 
-var stop_wobbly_effect = function (window) {
-    let actor = get_actor(window);
+var stop_actor_wobbly_effect = function (actor) {
     if (actor) {
         let effect = actor.get_effect(EFFECT_NAME);
         if (effect) {
             effect.stop();
-        }
-    }
-}
-
-var destroy_wobbly_effect = function (window) {
-    let actor = get_actor(window);
-    if (actor) {
-        let effect = actor.get_effect(EFFECT_NAME);
-        if (effect) {
-            effect.destroy();
         }
     }
 }
