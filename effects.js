@@ -7,7 +7,7 @@ const CLUTTER_TIMELINE_DURATION = 1000 * 1000;
 const RESTORE_X_FACTOR = 1.4;
 const RESTORE_Y_FACTOR = 1.4;
 const RESTORE_Y_STRETCH_FACTOR = 1.4;
-const X_MULTIPLIER = 1.1;
+const X_MULTIPLIER = 1.3;
 const Y_MULTIPLIER = 1.1;
 const Y_STRETCH_MULTIPLIER = 1.4;
 
@@ -15,8 +15,8 @@ const X_CLEAN_EXTRA_DELTA = 5;
 const Y_CLEAN_EXTRA_DELTA = 5;
 const X_CLEAN_SIZE = 2;
 const Y_CLEAN_SIZE = 2;
-const X_CLEAN_MARGIN = 1;
-const Y_CLEAN_MARGIN = 1;
+const X_CLEAN_MARGIN = 2;
+const Y_CLEAN_MARGIN = 2;
 
 var AbstractCommonEffect = GObject.registerClass({},
     class AbstractCommonEffect extends Clutter.DeformEffect {
@@ -74,10 +74,12 @@ var AbstractCommonEffect = GObject.registerClass({},
             if (actor) {
                 actor.remove_effect(this);
             }
+
+            this.invalidate();
         }
 
         stop() {
-            [this.xDeltaStop, this.yDeltaStop] = [this.xDelta, this.yDelta];
+            [this.xDeltaStop, this.yDeltaStop] = [this.xDelta * 1.5, this.yDelta * 1.5];
 
             this.i = 0;
             this.timerId.run_dispose();
@@ -273,9 +275,9 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
         on_tick_elapsed() {
             this.i++;
 
-            if (this.i > 3) {
-                this.xDelta = 300 * Math.sin((this.i-3) * 2.5) / Math.exp((this.i-3) / 3, 2);
-                this.yDelta = 300 * Math.sin((this.i-3) * 2.5) / Math.exp((this.i-3) / 3, 2);
+            if (this.i > 4) {
+                this.xDelta = 100 * Math.sin(this.i-4) / Math.exp((this.i-4) / 3, 2);
+                this.yDelta = 100 * Math.sin(this.i-4) / Math.exp((this.i-4) / 3, 2);
             
                 this.invalidate();
                 this.parentActor.queue_redraw();
