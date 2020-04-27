@@ -12,6 +12,7 @@ let grabOpEndId;
 let resizeMinMaxOpId;
 let timeoutWobblyId;
 let timeoutMinMaxId;
+let originalSpeed;
 
 function enable() {
     grabOpBeginId = global.display.connect('grab-op-begin', (display, screen, window, op) => {
@@ -66,7 +67,7 @@ function enable() {
     });
 }
 
-function disable() {
+function disable() {    
     global.display.disconnect(grabOpBeginId);
     global.display.disconnect(grabOpEndId);
     global.display.disconnect(resizeMinMaxOpId);

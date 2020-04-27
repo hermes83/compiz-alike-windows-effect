@@ -6,10 +6,10 @@ const CLUTTER_TIMELINE_DURATION = 1000 * 1000;
 
 const RESTORE_X_FACTOR = 1.4;
 const RESTORE_Y_FACTOR = 1.4;
-const RESTORE_Y_STRETCH_FACTOR = 1.5;
-const X_MULTIPLIER = 1.2;
-const Y_MULTIPLIER = 1.2;
-const Y_STRETCH_MULTIPLIER = 1.5
+const RESTORE_Y_STRETCH_FACTOR = 1.4;
+const X_MULTIPLIER = 1.1;
+const Y_MULTIPLIER = 1.1;
+const Y_STRETCH_MULTIPLIER = 1.4;
 
 const X_CLEAN_EXTRA_DELTA = 5;
 const Y_CLEAN_EXTRA_DELTA = 5;
@@ -187,7 +187,7 @@ var WobblyEffect = GObject.registerClass({},
         }
         
         vfunc_deform_vertex(w, h, v) {
-            v.x += this.xDelta * (h - h * Math.cos(Math.PI / 2 / h * v.y)) / h;
+            v.x += this.xDelta * (h - h * Math.cos(Math.PI / 2 / h * v.y) / 1.5) / h;
 
             v.y += 
                 (
@@ -273,11 +273,13 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
         on_tick_elapsed() {
             this.i++;
 
-            this.xDelta = 300 * Math.sin(this.i * 2.5) / Math.exp(this.i / 3, 2);
-            this.yDelta = 300 * Math.sin(this.i * 2.5) / Math.exp(this.i / 3, 2);
-        
-            this.invalidate();
-            this.parentActor.queue_redraw();
+            if (this.i > 3) {
+                this.xDelta = 300 * Math.sin((this.i-3) * 2.5) / Math.exp((this.i-3) / 3, 2);
+                this.yDelta = 300 * Math.sin((this.i-3) * 2.5) / Math.exp((this.i-3) / 3, 2);
+            
+                this.invalidate();
+                this.parentActor.queue_redraw();
+            }
 
             return true;
         }
