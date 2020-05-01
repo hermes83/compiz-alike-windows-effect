@@ -17,6 +17,7 @@ const X_CLEAN_SIZE = 2;
 const Y_CLEAN_SIZE = 2;
 const X_CLEAN_MARGIN = 2;
 const Y_CLEAN_MARGIN = 2;
+const CORNER_RESIZING_DIVIDER = 6;
 
 const STOP_COUNTER = 20;
 const STOP_COUNTER_EXTRA = 1;
@@ -260,7 +261,6 @@ var ResizeEffect = GObject.registerClass({},
 
             this.xDelta += (this.xOld - this.xNew) * X_MULTIPLIER;
             this.yDelta += (this.yOld - this.yNew) * Y_MULTIPLIER;
-            this.yDeltaStretch += (this.yOld - this.yNew) * Y_STRETCH_MULTIPLIER;
 
             [this.xOld, this.yOld] = [this.xNew, this.yNew];            
         }
@@ -285,8 +285,29 @@ var ResizeEffect = GObject.registerClass({},
                     break;
 
                 case Meta.GrabOp.RESIZING_N:
-                    v.y += this.yDelta * (h - v.y) * Math.pow(v.x - this.xPickedUp, 2) / (Math.pow(w, 2)* h);
-                    break;                
+                    v.y += this.yDelta * (h - v.y) * Math.pow(v.x - this.xPickedUp, 2) / (Math.pow(w, 2) * h);
+                    break;      
+
+                case Meta.GrabOp.RESIZING_NW:
+                    v.x += this.xDelta / 5 * (w - v.x) * Math.pow(v.y, 2) / (Math.pow(h, 2) * w);
+                    v.y +=  this.yDelta / 5 * (h - v.y) * Math.pow(v.x, 2) / (Math.pow(w, 2) * h);  
+                    break;
+                    
+                case Meta.GrabOp.RESIZING_NE:
+                    v.x += this.xDelta / CORNER_RESIZING_DIVIDER * v.x * Math.pow(v.y, 2) / (Math.pow(h, 2) * w);
+                    v.y += this.yDelta / CORNER_RESIZING_DIVIDER * (h - v.y) * Math.pow(w - v.x, 2) / (Math.pow(w, 2) * h);    
+                    break;
+
+                case Meta.GrabOp.RESIZING_SE:
+                    v.x += this.xDelta / CORNER_RESIZING_DIVIDER * v.x * Math.pow(h - v.y, 2) / (Math.pow(h, 2) * w);
+                    v.y += this.yDelta / CORNER_RESIZING_DIVIDER * v.y * Math.pow(w - v.x, 2) / (Math.pow(w, 2) * h);    
+                    break;
+
+                case Meta.GrabOp.RESIZING_SW:
+                    v.x += this.xDelta / CORNER_RESIZING_DIVIDER * (w - v.x) * Math.pow(v.y - h, 2) / (Math.pow(h, 2) * w);
+                    v.y += this.yDelta / CORNER_RESIZING_DIVIDER * v.y * Math.pow(v.x, 2) / (Math.pow(w, 2) * h);
+                    break;
+                            
             }
         }
 

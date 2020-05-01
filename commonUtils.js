@@ -13,7 +13,11 @@ var is_managed_op = function (op) {
            Meta.GrabOp.RESIZING_W == op ||
            Meta.GrabOp.RESIZING_E == op ||
            Meta.GrabOp.RESIZING_S == op ||
-           Meta.GrabOp.RESIZING_N == op;
+           Meta.GrabOp.RESIZING_N == op ||
+           Meta.GrabOp.RESIZING_NW == op ||
+           Meta.GrabOp.RESIZING_NE == op ||
+           Meta.GrabOp.RESIZING_SE == op ||
+           Meta.GrabOp.RESIZING_SW == op;
 }
 
 var get_actor = function(window) {
