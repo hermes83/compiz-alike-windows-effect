@@ -45,7 +45,7 @@ function addDefaultButton(frame, config) {
 		resizeEffectSwitch.set_active(config.RESIZE_EFFECT_ENABLED.get());
 	});
 
-	frame.pack_end(new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL, spacing: 20}), false, false, 0);
+	frame.pack_end(button, false, false, 0);
 	
 	return button;
 }
