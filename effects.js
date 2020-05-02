@@ -7,11 +7,6 @@ const Settings = Extension.imports.settings;
 
 const CLUTTER_TIMELINE_DURATION = 1000 * 1000;
 
-const RESTORE_Y_STRETCH_FACTOR = 1.4;
-const X_MULTIPLIER = 1.4;
-const Y_MULTIPLIER = 1.3;
-const Y_STRETCH_MULTIPLIER = 1.3;
-
 const X_CLEAN_EXTRA_DELTA = 10;
 const Y_CLEAN_EXTRA_DELTA = 10;
 const X_CLEAN_SIZE = 2;
@@ -55,13 +50,27 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.xDeltaFreezed = 0;
             this.yDeltaFreezed = 0;
 
-            this.prefs = (new Settings.Prefs());
-            // this.RESTORE_X_FACTOR = this.prefs.RESTORE_X_FACTOR.get();
-            // this.RESTORE_Y_FACTOR = this.prefs.RESTORE_Y_FACTOR.get();
-            this.RESTORE_X_FACTOR = 1.4;
-            this.RESTORE_Y_FACTOR = 1.4;
+            this.init_settings();
+        }
 
-            this.MAXIMIZE_EFFECT_ENABLED = this.prefs.MAXIMIZE_EFFECT_ENABLED.get();
+        init_settings() {
+            let prefs = (new Settings.Prefs());
+            this.MAXIMIZE_EFFECT_ENABLED = prefs.MAXIMIZE_EFFECT_ENABLED.get();
+            this.RESIZE_EFFECT_ENABLED = prefs.RESIZE_EFFECT_ENABLED.get();
+
+            let factor = (100 - prefs.FRICTION.get()) * 2 / 100;
+            let spring = 0.3 * (100 - prefs.SPRING.get()) / 100 + 1;
+            let restoreFactor = 1.4;
+
+            this.RESTORE_X_FACTOR = restoreFactor;
+            this.RESTORE_Y_FACTOR = restoreFactor;
+            this.RESTORE_Y_STRETCH_FACTOR = restoreFactor;
+            this.X_MULTIPLIER = factor;
+            this.Y_MULTIPLIER = factor;
+            this.Y_STRETCH_MULTIPLIER = factor;
+            this.END_EFFECT_DIVIDER = 4;
+            this.END_RESTORE_X_FACTOR = spring;
+            this.END_RESTORE_Y_FACTOR = spring;            
         }
 
         vfunc_set_actor(actor) {
@@ -180,9 +189,9 @@ var WobblyEffect = GObject.registerClass({},
                 this.initOldValues = false;
             }
 
-            this.xDelta += (this.xOld - this.xNew) * X_MULTIPLIER;
-            this.yDelta += (this.yOld - this.yNew) * Y_MULTIPLIER;
-            this.yDeltaStretch += (this.yOld - this.yNew) * Y_STRETCH_MULTIPLIER;
+            this.xDelta += (this.xOld - this.xNew) * this.X_MULTIPLIER;
+            this.yDelta += (this.yOld - this.yNew) * this.Y_MULTIPLIER;
+            this.yDeltaStretch += (this.yOld - this.yNew) * this.Y_STRETCH_MULTIPLIER;
 
             [this.xOld, this.yOld] = [this.xNew, this.yNew];  
             
@@ -199,17 +208,17 @@ var WobblyEffect = GObject.registerClass({},
         on_tick_elapsed() {
             this.xDelta /= this.RESTORE_X_FACTOR;
             this.yDelta /= this.RESTORE_Y_FACTOR;
-            this.yDeltaStretch /= RESTORE_Y_STRETCH_FACTOR;
+            this.yDeltaStretch /= this.RESTORE_Y_STRETCH_FACTOR;
 
             this.j--;
             if (this.j < 0) {
                 this.j = 0;
             } else if (this.j == STOP_COUNTER) {
-                this.xDeltaFreezed = this.xDelta / 4;
-                this.yDeltaFreezed = this.yDelta / 4;
+                this.xDeltaFreezed = this.xDelta / this.END_EFFECT_DIVIDER;
+                this.yDeltaFreezed = this.yDelta / this.END_EFFECT_DIVIDER;
             } else if (this.j < STOP_COUNTER) {
-                this.xDeltaFreezed /= 1.15;
-                this.yDeltaFreezed /= 1.15;    
+                this.xDeltaFreezed /= this.END_RESTORE_X_FACTOR;
+                this.yDeltaFreezed /= this.END_RESTORE_Y_FACTOR;
 
                 this.xDeltaStopMoving = this.xDeltaFreezed * Math.sin(Math.PI * 2 * this.j / STOP_COUNTER);
                 this.yDeltaStopMoving = this.yDeltaFreezed * Math.sin(Math.PI * 2 * this.j / STOP_COUNTER);
@@ -257,6 +266,8 @@ var ResizeEffect = GObject.registerClass({},
 
         _init(params = {}) {
             super._init(params);
+
+            this.effectDisabled = !this.RESIZE_EFFECT_ENABLED;
         }
 
         on_actor_event(actor, allocation, flags) {
@@ -271,8 +282,8 @@ var ResizeEffect = GObject.registerClass({},
                 this.initOldValues = false;     
             }
 
-            this.xDelta += (this.xOld - this.xNew) * X_MULTIPLIER;
-            this.yDelta += (this.yOld - this.yNew) * Y_MULTIPLIER;
+            this.xDelta += (this.xOld - this.xNew) * this.X_MULTIPLIER;
+            this.yDelta += (this.yOld - this.yNew) * this.Y_MULTIPLIER;
 
             [this.xOld, this.yOld] = [this.xNew, this.yNew];            
         }

@@ -14,19 +14,37 @@ function get_local_gsettings(schema_path) {
 		schemaSource = GioSSS.new_from_directory(
 			schemaDir.get_path(),
 			schemaSource,
-			false);
+			false
+		);
 	}
 
 	let schemaObj = schemaSource.lookup(schema_path, true);
 	if (!schemaObj) {
 		throw new Error('Schema ' + schema_path + ' could not be found for extension ' + Extension.metadata.uuid);
 	}
+	
 	return new Gio.Settings({ settings_schema: schemaObj });
 };
 
 function Prefs() {
 	var self = this;
 	var settings = this.settings = get_local_gsettings(SCHEMA_PATH);
+
+	this.FRICTION = {
+		key: 'friction',
+		get: function () { return settings.get_double(this.key); },
+		set: function (v) { settings.set_double(this.key, v); },
+		changed: function (cb) { return settings.connect('changed::' + this.key, cb); },
+		disconnect: function () { return settings.disconnect.apply(settings, arguments); },
+	};
+
+	this.SPRING = {
+		key: 'spring',
+		get: function () { return settings.get_double(this.key); },
+		set: function (v) { settings.set_double(this.key, v); },
+		changed: function (cb) { return settings.connect('changed::' + this.key, cb); },
+		disconnect: function () { return settings.disconnect.apply(settings, arguments); },
+	};
 
 	this.MAXIMIZE_EFFECT_ENABLED = {
 		key: 'maximize-effect-enabled',
@@ -36,20 +54,12 @@ function Prefs() {
 		disconnect: function () { return settings.disconnect.apply(settings, arguments); },
 	};
 
-	// this.RESTORE_X_FACTOR = {
-	// 	key: 'restore-x-factor',
-	// 	get: function () { return settings.get_double(this.key); },
-	// 	set: function (v) { settings.set_double(this.key, v); },
-	// 	changed: function (cb) { return settings.connect('changed::' + this.key, cb); },
-	// 	disconnect: function () { return settings.disconnect.apply(settings, arguments); },
-	// };
-
-	// this.RESTORE_Y_FACTOR = {
-	// 	key: 'restore-y-factor',
-	// 	get: function () { return settings.get_double(this.key); },
-	// 	set: function (v) { settings.set_double(this.key, v); },
-	// 	changed: function (cb) { return settings.connect('changed::' + this.key, cb); },
-	// 	disconnect: function () { return settings.disconnect.apply(settings, arguments); },
-	// };
+	this.RESIZE_EFFECT_ENABLED = {
+		key: 'resize-effect-enabled',
+		get: function () { return settings.get_boolean(this.key); },
+		set: function (v) { settings.set_boolean(this.key, v); },
+		changed: function (cb) { return settings.connect('changed::' + this.key, cb); },
+		disconnect: function () { return settings.disconnect.apply(settings, arguments); },
+	};
 
 };
