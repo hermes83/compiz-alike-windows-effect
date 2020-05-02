@@ -27,13 +27,12 @@ function buildPrefsWidget() {
 	addDefaultButton(frame, config);
 
 	frame.show_all();
-
+	
 	return frame;
 }
 
 function addDefaultButton(frame, config) {
 	let button = new Gtk.Button({label: "Reset to default"});
-	button.set_margin_top(30);
 	button.connect('clicked', function () {
 		config.FRICTION.set(50);
 		config.SPRING.set(50);
@@ -46,7 +45,7 @@ function addDefaultButton(frame, config) {
 		resizeEffectSwitch.set_active(config.RESIZE_EFFECT_ENABLED.get());
 	});
 
-	frame.add(button);
+	frame.pack_end(new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL, spacing: 20}), false, false, 0);
 	
 	return button;
 }

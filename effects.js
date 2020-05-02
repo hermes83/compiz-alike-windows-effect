@@ -71,6 +71,8 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.END_EFFECT_DIVIDER = 4;
             this.END_RESTORE_X_FACTOR = spring;
             this.END_RESTORE_Y_FACTOR = spring;            
+
+            this.DELTA_FREEZED = 80 * prefs.SPRING.get() / 100;
         }
 
         vfunc_set_actor(actor) {
@@ -107,9 +109,13 @@ var AbstractCommonEffect = GObject.registerClass({},
 
         stop() {
             [this.xDeltaStop, this.yDeltaStop] = [this.xDelta * 1.5, this.yDelta * 1.5];
-            [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
             this.i = 0;
+            
+            if (this.j > 0 && this.j < STOP_COUNTER) {
+                [this.xDelta, this.yDelta] = [this.xDeltaStopMoving * this.END_EFFECT_DIVIDER, this.yDeltaStopMoving * this.END_EFFECT_DIVIDER];
+            }
             this.j = 0;
+            [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
 
             if (this.timerId) {
                 this.timerId.run_dispose();
@@ -346,8 +352,8 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
             super._init(params);
 
             this.j = (STOP_COUNTER + STOP_COUNTER_EXTRA);
-            this.xDeltaFreezed = 20;
-            this.yDeltaFreezed = 20;
+            this.xDeltaFreezed = this.DELTA_FREEZED;
+            this.yDeltaFreezed = this.DELTA_FREEZED;
 
             this.effectDisabled = !this.MAXIMIZE_EFFECT_ENABLED;
         }
