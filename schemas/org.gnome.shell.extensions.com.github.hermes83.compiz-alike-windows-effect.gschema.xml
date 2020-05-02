@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+	<schema id="org.gnome.shell.extensions.com.github.hermes83.compiz-alike-windows-effect" path="/org/gnome/shell/extensions/ncom/github/hermes83/compiz-alike-windows-effect/">
+
+		<key type="b" name="maximize-effect-enabled">
+			<default>true</default>
+			<summary>Maximize effect enabled</summary>
+			<description/>
+		</key>
+<!--		
+		<key type="d" name="restore-x-factor">
+			<default>1.4</default>
+			<summary>restore X factor</summary>
+			<description/>
+		</key>
+
+		<key type="d" name="restore-y-factor">
+			<default>1.4</default>
+			<summary>restore Y factor</summary>
+			<description/>
+		</key>		
+
+		<key type="d" name="restore-y-stretch-factor">
+			<default>1.4</default>
+			<summary>restore Y stretch-factor</summary>
+			<description/>
+		</key>		
+
+		<key type="d" name="x-multiplier">
+			<default>1.4</default>
+			<summary>X multiplier</summary>
+			<description/>
+		</key>		
+
+		<key type="d" name="y-multiplier">
+			<default>1.3</default>
+			<summary>Y multiplier</summary>
+			<description/>
+		</key>		
+
+		<key type="d" name="y-stretch-multiplier">
+			<default>1.3</default>
+			<summary>Y stretch multiplier</summary>
+			<description/>
+		</key>		
+-->		
+	</schema>
+</schemalist>
+
+
+
+

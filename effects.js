@@ -1,20 +1,21 @@
 'use strict';
 
 const { GObject, Clutter, Meta, cairo } = imports.gi;
+const ExtensionUtils = imports.misc.extensionUtils;
+const Extension = ExtensionUtils.getCurrentExtension();
+const Settings = Extension.imports.settings;
 
 const CLUTTER_TIMELINE_DURATION = 1000 * 1000;
 
-const RESTORE_X_FACTOR = 1.4;
-const RESTORE_Y_FACTOR = 1.4;
 const RESTORE_Y_STRETCH_FACTOR = 1.4;
 const X_MULTIPLIER = 1.4;
 const Y_MULTIPLIER = 1.3;
 const Y_STRETCH_MULTIPLIER = 1.3;
 
-const X_CLEAN_EXTRA_DELTA = 2;
-const Y_CLEAN_EXTRA_DELTA = 2;
+const X_CLEAN_EXTRA_DELTA = 10;
+const Y_CLEAN_EXTRA_DELTA = 10;
 const X_CLEAN_SIZE = 2;
-const Y_CLEAN_SIZE = 2;
+const Y_CLEAN_SIZE = 2.5;
 const X_CLEAN_MARGIN = 2;
 const Y_CLEAN_MARGIN = 2;
 const CORNER_RESIZING_DIVIDER = 6;
@@ -30,6 +31,7 @@ var AbstractCommonEffect = GObject.registerClass({},
 
             this.parentActor = null;
             this.operationType = params.op;
+            this.effectDisabled = false;
 
             this.timerId = null;
             this.initOldValues = true;
@@ -52,12 +54,20 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.yDeltaStopMoving = 0;
             this.xDeltaFreezed = 0;
             this.yDeltaFreezed = 0;
+
+            this.prefs = (new Settings.Prefs());
+            // this.RESTORE_X_FACTOR = this.prefs.RESTORE_X_FACTOR.get();
+            // this.RESTORE_Y_FACTOR = this.prefs.RESTORE_Y_FACTOR.get();
+            this.RESTORE_X_FACTOR = 1.4;
+            this.RESTORE_Y_FACTOR = 1.4;
+
+            this.MAXIMIZE_EFFECT_ENABLED = this.prefs.MAXIMIZE_EFFECT_ENABLED.get();
         }
 
         vfunc_set_actor(actor) {
             super.vfunc_set_actor(actor);
 
-            if (actor) {
+            if (actor && !this.effectDisabled) {
                 this.parentActor = actor.get_parent();
 
                 [this.width, this.height] = actor.get_size();
@@ -180,12 +190,15 @@ var WobblyEffect = GObject.registerClass({},
             this.xDeltaStopMoving = 0;
             this.yDeltaStopMoving = 0;
 
-            this.partial_redraw(Math.abs(this.xDelta)/3, Math.abs(this.yDelta)/2, this.xDelta <= 0, this.xDelta >= 0, this.yDelta <=0, this.yDelta >= 0);
+            this.partial_redraw(
+                Math.abs(this.xDelta) / 3, 
+                Math.abs(this.yDelta) / 1.5, 
+                this.xDelta <= 0, this.xDelta >= 0, this.yDelta <=0, this.yDelta >= 0);
         }
 
         on_tick_elapsed() {
-            this.xDelta /= RESTORE_X_FACTOR;
-            this.yDelta /= RESTORE_Y_FACTOR;
+            this.xDelta /= this.RESTORE_X_FACTOR;
+            this.yDelta /= this.RESTORE_Y_FACTOR;
             this.yDeltaStretch /= RESTORE_Y_STRETCH_FACTOR;
 
             this.j--;
@@ -204,7 +217,7 @@ var WobblyEffect = GObject.registerClass({},
                 // this.parentActor.queue_redraw();
                 this.partial_redraw(
                     Math.abs(this.xDeltaStopMoving) + Math.abs(this.xDelta) / 3, 
-                    Math.abs(this.yDeltaStopMoving) + Math.abs(this.yDelta) / 1.5, 
+                    Math.abs(this.yDeltaStopMoving) + Math.abs(this.yDelta), 
                     this.xDeltaStopMoving <= 0 || this.xDelta <= 0, 
                     this.xDeltaStopMoving >= 0 || this.xDelta >= 0, 
                     this.yDeltaStopMoving <= 0 || this.yDelta <= 0, 
@@ -321,7 +334,9 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
 
             this.j = (STOP_COUNTER + STOP_COUNTER_EXTRA);
             this.xDeltaFreezed = 20;
-            this.yDeltaFreezed = 20;    
+            this.yDeltaFreezed = 20;
+
+            this.effectDisabled = !this.MAXIMIZE_EFFECT_ENABLED;
         }
 
         on_actor_event(actor, allocation, flags) {}
