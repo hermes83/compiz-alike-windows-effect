@@ -159,6 +159,7 @@ var WobblyEffect = GObject.registerClass({},
         
         on_actor_event(actor, allocation, flags) {
             [this.xNew, this.yNew] = allocation.get_origin();
+            [this.width, this.height] = actor.get_size();
         
             if (this.initOldValues) {
                 let [xMouse, yMouse] = global.get_pointer();
@@ -190,12 +191,10 @@ var WobblyEffect = GObject.registerClass({},
             this.j--;
             if (this.j < 0) {
                 this.j = 0;
-            } else if (this.j <= STOP_COUNTER) {
-                if (this.j == STOP_COUNTER) {
-                    this.xDeltaFreezed = this.xDelta / 4;
-                    this.yDeltaFreezed = this.yDelta / 4;
-                }
-
+            } else if (this.j == STOP_COUNTER) {
+                this.xDeltaFreezed = this.xDelta / 4;
+                this.yDeltaFreezed = this.yDelta / 4;
+            } else if (this.j < STOP_COUNTER) {
                 this.xDeltaFreezed /= 1.15;
                 this.yDeltaFreezed /= 1.15;    
 
@@ -205,7 +204,7 @@ var WobblyEffect = GObject.registerClass({},
                 // this.parentActor.queue_redraw();
                 this.partial_redraw(
                     Math.abs(this.xDeltaStopMoving) + Math.abs(this.xDelta) / 3, 
-                    Math.abs(this.yDeltaStopMoving) + Math.abs(this.yDelta) / 2, 
+                    Math.abs(this.yDeltaStopMoving) + Math.abs(this.yDelta) / 1.5, 
                     this.xDeltaStopMoving <= 0 || this.xDelta <= 0, 
                     this.xDeltaStopMoving >= 0 || this.xDelta >= 0, 
                     this.yDeltaStopMoving <= 0 || this.yDelta <= 0, 
@@ -289,8 +288,8 @@ var ResizeEffect = GObject.registerClass({},
                     break;      
 
                 case Meta.GrabOp.RESIZING_NW:
-                    v.x += this.xDelta / 5 * (w - v.x) * Math.pow(v.y, 2) / (Math.pow(h, 2) * w);
-                    v.y +=  this.yDelta / 5 * (h - v.y) * Math.pow(v.x, 2) / (Math.pow(w, 2) * h);  
+                    v.x += this.xDelta / CORNER_RESIZING_DIVIDER * (w - v.x) * Math.pow(v.y, 2) / (Math.pow(h, 2) * w);
+                    v.y +=  this.yDelta / CORNER_RESIZING_DIVIDER * (h - v.y) * Math.pow(v.x, 2) / (Math.pow(w, 2) * h);  
                     break;
                     
                 case Meta.GrabOp.RESIZING_NE:
@@ -321,8 +320,8 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
             super._init(params);
 
             this.j = (STOP_COUNTER + STOP_COUNTER_EXTRA);
-            this.xDeltaFreezed = 50;
-            this.yDeltaFreezed = 50;    
+            this.xDeltaFreezed = 20;
+            this.yDeltaFreezed = 20;    
         }
 
         on_actor_event(actor, allocation, flags) {}
