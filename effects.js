@@ -111,7 +111,9 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.i = 0;
             this.j = 0;
 
-            this.timerId.run_dispose();
+            if (this.timerId) {
+                this.timerId.run_dispose();
+            }
             this.timerId = new Clutter.Timeline({ duration: CLUTTER_TIMELINE_DURATION });
             this.timerId.connect('new-frame', this.on_stop_tick_elapsed.bind(this));
             this.timerId.start();        
