@@ -204,10 +204,11 @@ var WobblyEffect = GObject.registerClass({},
         
         vfunc_deform_vertex(w, h, v) {
             v.x += (1 - Math.cos(Math.PI * v.y / h / 2)) * this.xDelta / 3 + this.xDeltaStopMoving;
-            v.y += this.xPickedUp <= 150 ? this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
-                   this.xPickedUp >= w - 150 ? this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) /  this.divider + this.yDeltaStopMoving :
-                   v.y * this.yDeltaStretch / h + this.yDelta - (this.divider / (h - v.y) - 2 * Math.pow(w/2 - v.x, 2)) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving;
+            v.y += this.xPickedUp <= 250 ? this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
+                   this.xPickedUp >= w - 250 ? this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
+                   v.y * this.yDeltaStretch / h + this.yDelta - (this.divider / (h - v.y) - 2 * Math.pow(v.x - this.xPickedUp, 2)) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving;
         }
+
     }
 );
         
@@ -278,6 +279,7 @@ var ResizeEffect = GObject.registerClass({},
                     v.y += this.yDelta / CORNER_RESIZING_DIVIDER * v.y * Math.pow(v.x, 2) / (Math.pow(w, 2) * h);
                     break;          
             }
+
         }
     }
 );
@@ -316,5 +318,6 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
             v.x += this.xDeltaStopMoving;
             v.y += this.yDeltaStopMoving;
         }
+
     }
 );
