@@ -27,6 +27,10 @@ var get_actor = function(window) {
     return null;
 }
 
+var has_wobbly_effect = function (actor) {
+    return actor && actor.get_effect(EFFECT_NAME);
+}
+
 var add_actor_wobbly_effect = function (actor, op) { 
     if (actor) {
         if (Meta.GrabOp.MOVING == op) {

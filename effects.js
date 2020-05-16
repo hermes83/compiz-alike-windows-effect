@@ -1,21 +1,13 @@
 'use strict';
 
-const { GObject, Clutter, Meta, cairo } = imports.gi;
+const { GObject, Clutter, Meta } = imports.gi;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Extension = ExtensionUtils.getCurrentExtension();
 const Settings = Extension.imports.settings;
 
 const CLUTTER_TIMELINE_DURATION = 1000 * 1000;
-
-const X_CLEAN_EXTRA_DELTA = 10;
-const Y_CLEAN_EXTRA_DELTA = 10;
-const X_CLEAN_SIZE = 2;
-const Y_CLEAN_SIZE = 2.5;
-const X_CLEAN_MARGIN = 2;
-const Y_CLEAN_MARGIN = 2;
 const CORNER_RESIZING_DIVIDER = 6;
-
-const STOP_COUNTER = 20;
+const STOP_COUNTER = 15;
 const STOP_COUNTER_EXTRA = 1;
 
 var AbstractCommonEffect = GObject.registerClass({},
@@ -24,10 +16,12 @@ var AbstractCommonEffect = GObject.registerClass({},
         _init(params = {}) {
             super._init();
 
+            this.allocationChangedEvent = null;
+            this.paintEvent = null;
+            this.newFrameEvent = null;
             this.parentActor = null;
             this.operationType = params.op;
             this.effectDisabled = false;
-
             this.timerId = null;
             this.initOldValues = true;
             this.i = 0;
@@ -49,19 +43,16 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.yDeltaStopMoving = 0;
             this.xDeltaFreezed = 0;
             this.yDeltaFreezed = 0;
+            this.divider = 1;
 
-            this.init_settings();
-        }
-
-        init_settings() {
+            //Init stettings 
             let prefs = (new Settings.Prefs());
-            this.MAXIMIZE_EFFECT_ENABLED = prefs.MAXIMIZE_EFFECT_ENABLED.get();
-            this.RESIZE_EFFECT_ENABLED = prefs.RESIZE_EFFECT_ENABLED.get();
-
             let factor = (100 - prefs.FRICTION.get()) * 2 / 100;
             let spring = 0.3 * (100 - prefs.SPRING.get()) / 100 + 1;
             let restoreFactor = 1.4;
 
+            this.MAXIMIZE_EFFECT_ENABLED = prefs.MAXIMIZE_EFFECT_ENABLED.get();
+            this.RESIZE_EFFECT_ENABLED = prefs.RESIZE_EFFECT_ENABLED.get();
             this.RESTORE_X_FACTOR = restoreFactor;
             this.RESTORE_Y_FACTOR = restoreFactor;
             this.RESTORE_Y_STRETCH_FACTOR = restoreFactor;
@@ -71,7 +62,6 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.END_EFFECT_DIVIDER = 4;
             this.END_RESTORE_X_FACTOR = spring;
             this.END_RESTORE_Y_FACTOR = spring;            
-
             this.DELTA_FREEZED = 80 * prefs.SPRING.get() / 100;
         }
 
@@ -80,19 +70,25 @@ var AbstractCommonEffect = GObject.registerClass({},
 
             if (actor && !this.effectDisabled) {
                 this.parentActor = actor.get_parent();
+                actor.has_overlaps = () => { return false; };
 
                 [this.width, this.height] = actor.get_size();
-
-                actor.connect('allocation-changed', this.on_actor_event.bind(this));
+                
+                this.allocationChangedEvent = actor.connect('allocation-changed', this.on_actor_event.bind(this));
+                this.paintEvent = actor.connect('paint', () => {});
                 
                 this.timerId = new Clutter.Timeline({ duration: CLUTTER_TIMELINE_DURATION });
-                this.timerId.connect('new-frame', this.on_tick_elapsed.bind(this));
+                this.newFrameEvent = this.timerId.connect('new-frame', this.on_tick_elapsed.bind(this));
                 this.timerId.start();
             }
         }
 
         destroy() {
             if (this.timerId) {
+                if (this.newFrameEvent) {
+                    this.timerId.disconnect(this.newFrameEvent);
+                    this.newFrameEvent = null;
+                }
                 this.timerId.run_dispose();
                 this.timerId = null;
             }
@@ -101,10 +97,18 @@ var AbstractCommonEffect = GObject.registerClass({},
             
             let actor = this.get_actor();
             if (actor) {
+                if (this.paintEvent) {
+                    actor.disconnect(this.paintEvent);
+                    this.paintEvent = null;
+                }
+            
+                if (this.allocationChangedEvent) {
+                    actor.disconnect(this.allocationChangedEvent);
+                    this.allocationChangedEvent = null;
+                }
+
                 actor.remove_effect(this);
             }
-
-            this.invalidate();
         }
 
         stop() {
@@ -118,10 +122,14 @@ var AbstractCommonEffect = GObject.registerClass({},
             [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
 
             if (this.timerId) {
+                if (this.newFrameEvent) {
+                    this.timerId.disconnect(this.newFrameEvent);
+                    this.newFrameEvent = null;
+                }
                 this.timerId.run_dispose();
             }
             this.timerId = new Clutter.Timeline({ duration: CLUTTER_TIMELINE_DURATION });
-            this.timerId.connect('new-frame', this.on_stop_tick_elapsed.bind(this));
+            this.newFrameEvent = this.timerId.connect('new-frame', this.on_stop_tick_elapsed.bind(this));
             this.timerId.start();        
         }
 
@@ -133,46 +141,8 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.yDeltaStretch = this.yDelta;
 
             this.invalidate();
-            this.parentActor.queue_redraw();
 
             return true;
-        }
-        
-        partial_redraw(xSize, ySize, redrawLeft, redrawRight, redrawTop, redrawBottom) {
-            if (this.parentActor) {
-                if (redrawLeft) {
-                    this.parentActor.queue_redraw_with_clip(new cairo.RectangleInt({
-                        x: this.xOld - X_CLEAN_MARGIN - (xSize + X_CLEAN_EXTRA_DELTA) * X_CLEAN_SIZE, 
-                        y: this.yOld - Y_CLEAN_MARGIN, 
-                        width: (xSize + X_CLEAN_EXTRA_DELTA) * X_CLEAN_SIZE, 
-                        height: this.height + Y_CLEAN_MARGIN * 2
-                    }));
-                }
-                if (redrawRight) {
-                    this.parentActor.queue_redraw_with_clip(new cairo.RectangleInt({
-                        x: this.xOld + this.width + X_CLEAN_MARGIN, 
-                        y: this.yOld - Y_CLEAN_MARGIN, 
-                        width: (xSize + X_CLEAN_EXTRA_DELTA) * X_CLEAN_SIZE, 
-                        height: this.height + Y_CLEAN_MARGIN * 2
-                    }));
-                } 
-                if (redrawTop) {
-                    this.parentActor.queue_redraw_with_clip(new cairo.RectangleInt({
-                        x: this.xOld - X_CLEAN_MARGIN - (xSize + X_CLEAN_EXTRA_DELTA) * X_CLEAN_SIZE, 
-                        y: this.yOld - Y_CLEAN_MARGIN - (ySize + Y_CLEAN_EXTRA_DELTA) * Y_CLEAN_SIZE, 
-                        width: this.width + X_CLEAN_MARGIN * 2 + xSize * X_CLEAN_SIZE * 2, 
-                        height: (ySize + Y_CLEAN_EXTRA_DELTA) * Y_CLEAN_SIZE
-                    }));           
-                }       
-                if (redrawBottom) {
-                    this.parentActor.queue_redraw_with_clip(new cairo.RectangleInt({
-                        x: this.xOld - X_CLEAN_MARGIN - (xSize + X_CLEAN_EXTRA_DELTA) * X_CLEAN_SIZE, 
-                        y: this.yOld + Y_CLEAN_MARGIN + this.height, 
-                        width: this.width + X_CLEAN_MARGIN * 2 + (xSize + X_CLEAN_EXTRA_DELTA) * X_CLEAN_SIZE * 2, 
-                        height: (ySize + Y_CLEAN_EXTRA_DELTA) * Y_CLEAN_SIZE
-                    }));
-                }  
-            }
         }
     }
 );
@@ -187,7 +157,9 @@ var WobblyEffect = GObject.registerClass({},
         on_actor_event(actor, allocation, flags) {
             [this.xNew, this.yNew] = allocation.get_origin();
             [this.width, this.height] = actor.get_size();
-        
+            
+            this.divider = Math.pow(this.width, 2) * this.height;
+
             if (this.initOldValues) {
                 let [xMouse, yMouse] = global.get_pointer();
 
@@ -204,13 +176,7 @@ var WobblyEffect = GObject.registerClass({},
             [this.xOld, this.yOld] = [this.xNew, this.yNew];  
             
             this.j = (STOP_COUNTER + STOP_COUNTER_EXTRA);
-            this.xDeltaStopMoving = 0;
-            this.yDeltaStopMoving = 0;
-
-            this.partial_redraw(
-                Math.abs(this.xDelta) / 3, 
-                Math.abs(this.yDelta) / 1.5, 
-                this.xDelta <= 0, this.xDelta >= 0, this.yDelta <=0, this.yDelta >= 0);
+            [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
         }
 
         on_tick_elapsed() {
@@ -227,45 +193,21 @@ var WobblyEffect = GObject.registerClass({},
             } else if (this.j < STOP_COUNTER) {
                 this.xDeltaFreezed /= this.END_RESTORE_X_FACTOR;
                 this.yDeltaFreezed /= this.END_RESTORE_Y_FACTOR;
-
                 this.xDeltaStopMoving = this.xDeltaFreezed * Math.sin(Math.PI * 2 * this.j / STOP_COUNTER);
                 this.yDeltaStopMoving = this.yDeltaFreezed * Math.sin(Math.PI * 2 * this.j / STOP_COUNTER);
-        
-                // this.parentActor.queue_redraw();
-                this.partial_redraw(
-                    Math.abs(this.xDeltaStopMoving) + Math.abs(this.xDelta) / 3, 
-                    Math.abs(this.yDeltaStopMoving) + Math.abs(this.yDelta), 
-                    this.xDeltaStopMoving <= 0 || this.xDelta <= 0, 
-                    this.xDeltaStopMoving >= 0 || this.xDelta >= 0, 
-                    this.yDeltaStopMoving <= 0 || this.yDelta <= 0, 
-                    this.yDeltaStopMoving >= 0 || this.yDelta >= 0
-                );
             }
 
             this.invalidate();
-
+            
             return true;
         }
         
         vfunc_deform_vertex(w, h, v) {
-            v.x += this.xDelta / 2 * (h - h * Math.cos(Math.PI / 2 / h * v.y)) / h + this.xDeltaStopMoving;
-
-            v.y += 
-                (
-                    this.xPickedUp >= w / 3 && this.xPickedUp <= w * 2 / 3 ? v.y * this.yDeltaStretch / h : 0
-                ) +
-                this.yDelta +
-                (
-                    this.xPickedUp < w / 3 ? -Math.pow(w - v.x, 2) :
-                    this.xPickedUp > w * 2 / 3 ? -Math.pow(v.x, 2) :
-                    2 * Math.pow(w/2 - v.x, 2) -(w * w * h)/(h - v.y)
-                ) *
-                this.yDelta *
-                (h - v.y) / 
-                (w * w * h)  
-                 + this.yDeltaStopMoving;
+            v.x += (1 - Math.cos(Math.PI * v.y / h / 2)) * this.xDelta / 3 + this.xDeltaStopMoving;
+            v.y += this.xPickedUp <= 150 ? this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
+                   this.xPickedUp >= w - 150 ? this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) /  this.divider + this.yDeltaStopMoving :
+                   v.y * this.yDeltaStretch / h + this.yDelta - (this.divider / (h - v.y) - 2 * Math.pow(w/2 - v.x, 2)) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving;
         }
-
     }
 );
         
@@ -296,10 +238,7 @@ var ResizeEffect = GObject.registerClass({},
             [this.xOld, this.yOld] = [this.xNew, this.yNew];            
         }
 
-        on_tick_elapsed() {
-            this.i++;
-            this.parentActor.queue_redraw();
-        }
+        on_tick_elapsed() {}
         
         vfunc_deform_vertex(w, h, v) {
             switch (this.operationType) {
@@ -337,11 +276,9 @@ var ResizeEffect = GObject.registerClass({},
                 case Meta.GrabOp.RESIZING_SW:
                     v.x += this.xDelta / CORNER_RESIZING_DIVIDER * (w - v.x) * Math.pow(v.y - h, 2) / (Math.pow(h, 2) * w);
                     v.y += this.yDelta / CORNER_RESIZING_DIVIDER * v.y * Math.pow(v.x, 2) / (Math.pow(w, 2) * h);
-                    break;
-                            
+                    break;          
             }
         }
-
     }
 );
 
@@ -370,12 +307,8 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
     
                 this.xDeltaStopMoving = this.xDeltaFreezed * Math.sin(Math.PI * 8 * this.j / (STOP_COUNTER));
                 this.yDeltaStopMoving = this.yDeltaFreezed * Math.sin(Math.PI * 8 * this.j / (STOP_COUNTER));
-                
-                this.invalidate();
 
-                if (this.operationType == 1) {
-                    this.parentActor.queue_redraw();
-                }
+                this.invalidate();
             }
         }
         
@@ -383,6 +316,5 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
             v.x += this.xDeltaStopMoving;
             v.y += this.yDeltaStopMoving;
         }
-
     }
 );

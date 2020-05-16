@@ -50,11 +50,17 @@ function enable() {
     });
 
     resizeMinMaxOpId = global.window_manager.connect('size-change', (e, actor, op) => {
-        stop_min_max_timer();            
+        if (op == 1 && Utils.has_wobbly_effect(actor)) {
+            return;
+        } 
 
+        stop_wobbly_timer();
+        Utils.destroy_actor_wobbly_effect(actor);
+    
+        stop_min_max_timer();            
         Utils.destroy_actor_min_max_effect(actor);
+
         Utils.add_actor_min_max_effect(actor, op);
-        
         timeoutMinMaxId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TIMEOUT_DELAY, () => {
             stop_min_max_timer();
 
