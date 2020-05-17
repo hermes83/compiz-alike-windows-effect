@@ -3,14 +3,32 @@
 	<schema id="org.gnome.shell.extensions.com.github.hermes83.compiz-alike-windows-effect" path="/org/gnome/shell/extensions/ncom/github/hermes83/compiz-alike-windows-effect/">
 
 		<key type="d" name="friction">
-			<default>50</default>
+			<default>20</default>
 			<summary>friction</summary>
 			<description/>
 		</key>
 
 		<key type="d" name="spring">
-			<default>50</default>
+			<default>40</default>
 			<summary>spring</summary>
+			<description/>
+		</key>		
+<!--
+		<key type="b" name="auto-restore-factor">
+			<default>false</default>
+			<summary>Autotune restore factor</summary>
+			<description/>
+		</key>
+-->
+		<key type="d" name="manual-restore-factor">
+			<default>4</default>
+			<summary>Restore factor</summary>
+			<description/>
+		</key>		
+
+		<key type="d" name="skip-frames-before-spring-start">
+			<default>1</default>
+			<summary>Skip frames before spring starts</summary>
 			<description/>
 		</key>		
 

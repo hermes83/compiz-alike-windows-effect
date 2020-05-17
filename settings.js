@@ -27,7 +27,6 @@ function get_local_gsettings(schema_path) {
 };
 
 function Prefs() {
-	var self = this;
 	var settings = this.settings = get_local_gsettings(SCHEMA_PATH);
 
 	this.FRICTION = {
@@ -40,6 +39,30 @@ function Prefs() {
 
 	this.SPRING = {
 		key: 'spring',
+		get: function () { return settings.get_double(this.key); },
+		set: function (v) { settings.set_double(this.key, v); },
+		changed: function (cb) { return settings.connect('changed::' + this.key, cb); },
+		disconnect: function () { return settings.disconnect.apply(settings, arguments); },
+	};
+
+	// this.AUTO_RESTORE_FACTOR = {
+	// 	key: 'auto-restore-factor',
+	// 	get: function () { return settings.get_boolean(this.key); },
+	// 	set: function (v) { settings.set_boolean(this.key, v); },
+	// 	changed: function (cb) { return settings.connect('changed::' + this.key, cb); },
+	// 	disconnect: function () { return settings.disconnect.apply(settings, arguments); },
+	// };
+
+	this.MANUAL_RESTORE_FACTOR = {
+		key: 'manual-restore-factor',
+		get: function () { return settings.get_double(this.key); },
+		set: function (v) { settings.set_double(this.key, v); },
+		changed: function (cb) { return settings.connect('changed::' + this.key, cb); },
+		disconnect: function () { return settings.disconnect.apply(settings, arguments); },
+	};
+
+	this.SKIP_FRAMES_BEFORE_SPRING_START = {
+		key: 'skip-frames-before-spring-start',
 		get: function () { return settings.get_double(this.key); },
 		set: function (v) { settings.set_double(this.key, v); },
 		changed: function (cb) { return settings.connect('changed::' + this.key, cb); },

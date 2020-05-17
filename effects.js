@@ -7,8 +7,6 @@ const Settings = Extension.imports.settings;
 
 const CLUTTER_TIMELINE_DURATION = 1000 * 1000;
 const CORNER_RESIZING_DIVIDER = 6;
-const STOP_COUNTER = 15;
-const STOP_COUNTER_EXTRA = 1;
 
 var AbstractCommonEffect = GObject.registerClass({},
     class AbstractCommonEffect extends Clutter.DeformEffect {
@@ -26,6 +24,7 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.initOldValues = true;
             this.i = 0;
             this.j = 0;
+            this.k = 0;
             this.xPickedUp = 0;
             this.yPickedUp = 0;
             this.width = 0;
@@ -44,25 +43,24 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.xDeltaFreezed = 0;
             this.yDeltaFreezed = 0;
             this.divider = 1;
+            // this.prevMsec = 0;
 
             //Init stettings 
             let prefs = (new Settings.Prefs());
-            let factor = (100 - prefs.FRICTION.get()) * 2 / 100;
-            let spring = 0.3 * (100 - prefs.SPRING.get()) / 100 + 1;
-            let restoreFactor = 1.4;
 
             this.MAXIMIZE_EFFECT_ENABLED = prefs.MAXIMIZE_EFFECT_ENABLED.get();
             this.RESIZE_EFFECT_ENABLED = prefs.RESIZE_EFFECT_ENABLED.get();
-            this.RESTORE_X_FACTOR = restoreFactor;
-            this.RESTORE_Y_FACTOR = restoreFactor;
-            this.RESTORE_Y_STRETCH_FACTOR = restoreFactor;
-            this.X_MULTIPLIER = factor;
-            this.Y_MULTIPLIER = factor;
-            this.Y_STRETCH_MULTIPLIER = factor;
+            this.X_MULTIPLIER = (100 - prefs.FRICTION.get()) * 2 / 100;
+            this.Y_MULTIPLIER = (100 - prefs.FRICTION.get()) * 2 / 100;
+            this.Y_STRETCH_MULTIPLIER = (100 - prefs.FRICTION.get()) * 2 / 100;
             this.END_EFFECT_DIVIDER = 4;
-            this.END_RESTORE_X_FACTOR = spring;
-            this.END_RESTORE_Y_FACTOR = spring;            
+            this.END_RESTORE_X_FACTOR = 0.3 * (100 - prefs.SPRING.get()) / 100 + 1;
+            this.END_RESTORE_Y_FACTOR = 0.3 * (100 - prefs.SPRING.get()) / 100 + 1;            
             this.DELTA_FREEZED = 80 * prefs.SPRING.get() / 100;
+            this.STOP_COUNTER = 20;
+            this.STOP_COUNTER_EXTRA = prefs.SKIP_FRAMES_BEFORE_SPRING_START.get();
+            // this.AUTO_FRAMERATE = prefs.AUTO_RESTORE_FACTOR.get();
+            this.RESTORE_FACTOR = 1 + prefs.MANUAL_RESTORE_FACTOR.get() / 10;
         }
 
         vfunc_set_actor(actor) {
@@ -71,22 +69,28 @@ var AbstractCommonEffect = GObject.registerClass({},
             if (actor && !this.effectDisabled) {
                 this.parentActor = actor.get_parent();
                 // this.parentActor.set_offscreen_redirect(Clutter.OffscreenRedirect.AUTOMATIC_FOR_OPACITY);
-
+                
+                [this.width, this.height] = actor.get_size();
                 actor.has_overlaps = () => { return false; };
                 // actor.set_offscreen_redirect(Clutter.OffscreenRedirect.ALWAYS);
-
-                [this.width, this.height] = actor.get_size();
                 
                 this.allocationChangedEvent = actor.connect('allocation-changed', this.on_actor_event.bind(this));
-                this.paintEvent = actor.connect('paint', () => {});
+                this.paintEvent = actor.connect('paint', () => {
+                    return false;
+                });
                 
-                this.timerId = new Clutter.Timeline({ duration: CLUTTER_TIMELINE_DURATION });
-                this.newFrameEvent = this.timerId.connect('new-frame', this.on_tick_elapsed.bind(this));
-                this.timerId.start();
+                this.start_timer(this.on_tick_elapsed.bind(this));
             }
         }
 
-        destroy() {
+        start_timer(timerFunction) {
+            this.stop_timer();
+            this.timerId = new Clutter.Timeline({ duration: CLUTTER_TIMELINE_DURATION });
+            this.newFrameEvent = this.timerId.connect('new-frame', timerFunction);
+            this.timerId.start();      
+        }
+
+        stop_timer() {
             if (this.timerId) {
                 if (this.newFrameEvent) {
                     this.timerId.disconnect(this.newFrameEvent);
@@ -95,16 +99,15 @@ var AbstractCommonEffect = GObject.registerClass({},
                 this.timerId.run_dispose();
                 this.timerId = null;
             }
+        }
 
-            // if (this.parentActor) {
-            //     this.parentActor.set_offscreen_redirect(Clutter.OffscreenRedirect.AUTOMATIC_FOR_OPACITY);
-            // }
+        destroy() {
+            this.stop_timer();
+
             this.parentActor = null;
             
             let actor = this.get_actor();
             if (actor) {
-                // actor.set_offscreen_redirect(Clutter.OffscreenRedirect.AUTOMATIC_FOR_OPACITY);
-
                 if (this.paintEvent) {
                     actor.disconnect(this.paintEvent);
                     this.paintEvent = null;
@@ -121,31 +124,17 @@ var AbstractCommonEffect = GObject.registerClass({},
 
         stop() {
             [this.xDeltaStop, this.yDeltaStop] = [this.xDelta * 1.5, this.yDelta * 1.5];
+            [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
             this.i = 0;
             
-            if (this.j > 0 && this.j < STOP_COUNTER) {
-                [this.xDelta, this.yDelta] = [this.xDeltaStopMoving * this.END_EFFECT_DIVIDER, this.yDeltaStopMoving * this.END_EFFECT_DIVIDER];
-            }
-            this.j = 0;
-            [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
-
-            if (this.timerId) {
-                if (this.newFrameEvent) {
-                    this.timerId.disconnect(this.newFrameEvent);
-                    this.newFrameEvent = null;
-                }
-                this.timerId.run_dispose();
-            }
-            this.timerId = new Clutter.Timeline({ duration: CLUTTER_TIMELINE_DURATION });
-            this.newFrameEvent = this.timerId.connect('new-frame', this.on_stop_tick_elapsed.bind(this));
-            this.timerId.start();        
+            this.start_timer(this.on_stop_tick_elapsed.bind(this));
         }
 
-        on_stop_tick_elapsed() {
+        on_stop_tick_elapsed(timer, msecs) {
             this.i++;
     
-            this.xDelta = this.xDeltaStop * Math.sin(this.i) / Math.exp(this.i / 4, 2);
-            this.yDelta = this.yDeltaStop * Math.sin(this.i) / Math.exp(this.i / 4, 2);
+            this.xDelta = this.xDeltaStop * Math.sin(this.i) / Math.exp(this.i / this.END_EFFECT_DIVIDER, 2);
+            this.yDelta = this.yDeltaStop * Math.sin(this.i) / Math.exp(this.i / this.END_EFFECT_DIVIDER, 2);
             this.yDeltaStretch = this.yDelta;
 
             this.invalidate();
@@ -183,37 +172,43 @@ var WobblyEffect = GObject.registerClass({},
 
             [this.xOld, this.yOld] = [this.xNew, this.yNew];  
             
-            this.j = (STOP_COUNTER + STOP_COUNTER_EXTRA);
+            this.j = (this.STOP_COUNTER + this.STOP_COUNTER_EXTRA);
             [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
         }
 
-        on_tick_elapsed() {
-            this.xDelta /= this.RESTORE_X_FACTOR;
-            this.yDelta /= this.RESTORE_Y_FACTOR;
-            this.yDeltaStretch /= this.RESTORE_Y_STRETCH_FACTOR;
+        on_tick_elapsed(timer, msec) {
+            // if (this.AUTO_FRAMERATE) {
+            //     this.RESTORE_FACTOR = (msec - this.prevMsec) / 75 + 1;
+            // }
+            
+            this.xDelta /= this.RESTORE_FACTOR;
+            this.yDelta /= this.RESTORE_FACTOR;
+            this.yDeltaStretch /= this.RESTORE_FACTOR;
+
+            // this.prevMsec = msec;
 
             this.j--;
             if (this.j < 0) {
                 this.j = 0;
-            } else if (this.j == STOP_COUNTER) {
+            } else if (this.j == this.STOP_COUNTER) {
                 this.xDeltaFreezed = this.xDelta / this.END_EFFECT_DIVIDER;
                 this.yDeltaFreezed = this.yDelta / this.END_EFFECT_DIVIDER;
-            } else if (this.j < STOP_COUNTER) {
+            } else if (this.j < this.STOP_COUNTER) {
                 this.xDeltaFreezed /= this.END_RESTORE_X_FACTOR;
                 this.yDeltaFreezed /= this.END_RESTORE_Y_FACTOR;
-                this.xDeltaStopMoving = this.xDeltaFreezed * Math.sin(Math.PI * 2 * this.j / STOP_COUNTER);
-                this.yDeltaStopMoving = this.yDeltaFreezed * Math.sin(Math.PI * 2 * this.j / STOP_COUNTER);
+                this.xDeltaStopMoving = this.xDeltaFreezed * Math.sin(Math.PI * 2 * this.j / this.STOP_COUNTER);
+                this.yDeltaStopMoving = this.yDeltaFreezed * Math.sin(Math.PI * 2 * this.j / this.STOP_COUNTER);
             }
 
             this.invalidate();
-            
+
             return true;
         }
         
         vfunc_deform_vertex(w, h, v) {
-            v.x += (1 - Math.cos(Math.PI * v.y / h / 2)) * this.xDelta / 3 + this.xDeltaStopMoving;
-            v.y += this.xPickedUp <= w / 5 ? this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
-                   this.xPickedUp >= w - w / 5 ? this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
+            v.x += (1 - Math.cos(Math.PI * v.y / h / 2)) * this.xDelta / 2 + this.xDeltaStopMoving;
+            v.y += this.xPickedUp < w / 5 ? this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
+                   this.xPickedUp > w * 0.8 ? this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
                    this.yDeltaStretch * v.y / h + Math.pow(v.x - this.xPickedUp, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving;
         }
 
@@ -247,7 +242,9 @@ var ResizeEffect = GObject.registerClass({},
             [this.xOld, this.yOld] = [this.xNew, this.yNew];            
         }
 
-        on_tick_elapsed() {}
+        on_tick_elapsed(timer, msecs) {
+            return true;
+        }
         
         vfunc_deform_vertex(w, h, v) {
             switch (this.operationType) {
@@ -298,7 +295,7 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
         _init(params = {}) {
             super._init(params);
 
-            this.j = (STOP_COUNTER + STOP_COUNTER_EXTRA);
+            this.j = (this.STOP_COUNTER + this.STOP_COUNTER_EXTRA);
             this.xDeltaFreezed = this.DELTA_FREEZED;
             this.yDeltaFreezed = this.DELTA_FREEZED;
 
@@ -307,7 +304,7 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
 
         on_actor_event(actor, allocation, flags) {}
 
-        on_tick_elapsed() {
+        on_tick_elapsed(timer, msecs) {
             this.j--;
             if (this.j < 0) {
                 this.j = 0;
@@ -315,11 +312,13 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
                 this.xDeltaFreezed /= 1.2;
                 this.yDeltaFreezed /= 1.2;    
     
-                this.xDeltaStopMoving = this.xDeltaFreezed * Math.sin(Math.PI * 8 * this.j / (STOP_COUNTER));
-                this.yDeltaStopMoving = this.yDeltaFreezed * Math.sin(Math.PI * 8 * this.j / (STOP_COUNTER));
+                this.xDeltaStopMoving = this.xDeltaFreezed * Math.sin(Math.PI * 8 * this.j / (this.STOP_COUNTER));
+                this.yDeltaStopMoving = this.yDeltaFreezed * Math.sin(Math.PI * 8 * this.j / (this.STOP_COUNTER));
 
                 this.invalidate();
             }
+
+            return true;
         }
         
         vfunc_deform_vertex(w, h, v) {
