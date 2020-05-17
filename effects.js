@@ -70,7 +70,10 @@ var AbstractCommonEffect = GObject.registerClass({},
 
             if (actor && !this.effectDisabled) {
                 this.parentActor = actor.get_parent();
+                // this.parentActor.set_offscreen_redirect(Clutter.OffscreenRedirect.AUTOMATIC_FOR_OPACITY);
+
                 actor.has_overlaps = () => { return false; };
+                // actor.set_offscreen_redirect(Clutter.OffscreenRedirect.ALWAYS);
 
                 [this.width, this.height] = actor.get_size();
                 
@@ -93,10 +96,15 @@ var AbstractCommonEffect = GObject.registerClass({},
                 this.timerId = null;
             }
 
+            // if (this.parentActor) {
+            //     this.parentActor.set_offscreen_redirect(Clutter.OffscreenRedirect.AUTOMATIC_FOR_OPACITY);
+            // }
             this.parentActor = null;
             
             let actor = this.get_actor();
             if (actor) {
+                // actor.set_offscreen_redirect(Clutter.OffscreenRedirect.AUTOMATIC_FOR_OPACITY);
+
                 if (this.paintEvent) {
                     actor.disconnect(this.paintEvent);
                     this.paintEvent = null;
@@ -204,9 +212,9 @@ var WobblyEffect = GObject.registerClass({},
         
         vfunc_deform_vertex(w, h, v) {
             v.x += (1 - Math.cos(Math.PI * v.y / h / 2)) * this.xDelta / 3 + this.xDeltaStopMoving;
-            v.y += this.xPickedUp <= 250 ? this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
-                   this.xPickedUp >= w - 250 ? this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
-                   v.y * this.yDeltaStretch / h + this.yDelta - (this.divider / (h - v.y) - 2 * Math.pow(v.x - this.xPickedUp, 2)) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving;
+            v.y += this.xPickedUp <= w / 5 ? this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
+                   this.xPickedUp >= w - w / 5 ? this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
+                   this.yDeltaStretch * v.y / h + Math.pow(v.x - this.xPickedUp, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving;
         }
 
     }
