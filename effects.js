@@ -43,7 +43,6 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.xDeltaFreezed = 0;
             this.yDeltaFreezed = 0;
             this.divider = 1;
-            // this.prevMsec = 0;
 
             //Init stettings 
             let prefs = (new Settings.Prefs());
@@ -59,7 +58,6 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.DELTA_FREEZED = 80 * prefs.SPRING.get() / 100;
             this.STOP_COUNTER = 20;
             this.STOP_COUNTER_EXTRA = prefs.SKIP_FRAMES_BEFORE_SPRING_START.get();
-            // this.AUTO_FRAMERATE = prefs.AUTO_RESTORE_FACTOR.get();
             this.RESTORE_FACTOR = 1 + prefs.MANUAL_RESTORE_FACTOR.get() / 10;
         }
 
@@ -69,16 +67,11 @@ var AbstractCommonEffect = GObject.registerClass({},
             if (actor && !this.effectDisabled) {
                 this.parentActor = actor.get_parent();
                 this.set_n_tiles(6, 4);
-                // this.parentActor.set_offscreen_redirect(Clutter.OffscreenRedirect.AUTOMATIC_FOR_OPACITY);
                 
                 [this.width, this.height] = actor.get_size();
-                actor.has_overlaps = () => { return false; };
-                // actor.set_offscreen_redirect(Clutter.OffscreenRedirect.ALWAYS);
                 
                 this.allocationChangedEvent = actor.connect('allocation-changed', this.on_actor_event.bind(this));
-                this.paintEvent = actor.connect('paint', () => {
-                    return false;
-                });
+                this.paintEvent = actor.connect('paint', () => {});
                 
                 this.start_timer(this.on_tick_elapsed.bind(this));
             }
@@ -179,16 +172,10 @@ var WobblyEffect = GObject.registerClass({},
             return false;
         }
 
-        on_tick_elapsed(timer, msec) {
-            // if (this.AUTO_FRAMERATE) {
-            //     this.RESTORE_FACTOR = (msec - this.prevMsec) / 75 + 1;
-            // }
-            
+        on_tick_elapsed(timer, msec) {            
             this.xDelta /= this.RESTORE_FACTOR;
             this.yDelta /= this.RESTORE_FACTOR;
             this.yDeltaStretch /= this.RESTORE_FACTOR;
-
-            // this.prevMsec = msec;
 
             this.j--;
             if (this.j < 0) {
@@ -214,7 +201,6 @@ var WobblyEffect = GObject.registerClass({},
                    this.xPickedUp > w * 0.8 ? this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
                    this.yDeltaStretch * v.y / h + Math.pow(v.x - this.xPickedUp, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving;
         }
-
     }
 );
         
