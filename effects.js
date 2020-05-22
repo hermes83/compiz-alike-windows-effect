@@ -68,6 +68,7 @@ var AbstractCommonEffect = GObject.registerClass({},
 
             if (actor && !this.effectDisabled) {
                 this.parentActor = actor.get_parent();
+                this.set_n_tiles(6, 4);
                 // this.parentActor.set_offscreen_redirect(Clutter.OffscreenRedirect.AUTOMATIC_FOR_OPACITY);
                 
                 [this.width, this.height] = actor.get_size();
@@ -174,6 +175,8 @@ var WobblyEffect = GObject.registerClass({},
             
             this.j = (this.STOP_COUNTER + this.STOP_COUNTER_EXTRA);
             [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
+
+            return false;
         }
 
         on_tick_elapsed(timer, msec) {
