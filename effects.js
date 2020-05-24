@@ -149,8 +149,6 @@ var WobblyEffect = GObject.registerClass({},
             [this.xNew, this.yNew] = allocation.get_origin();
             [this.width, this.height] = actor.get_size();
             
-            this.divider = Math.pow(this.width, 2) * this.height;
-
             if (this.initOldValues) {
                 let [xMouse, yMouse] = global.get_pointer();
 
@@ -167,6 +165,8 @@ var WobblyEffect = GObject.registerClass({},
             [this.xOld, this.yOld] = [this.xNew, this.yNew];  
             
             this.j = (this.STOP_COUNTER + this.STOP_COUNTER_EXTRA);
+            // [this.xDeltaFreezed, this.yDeltaFreezed] = [this.xDelta / this.END_EFFECT_DIVIDER, this.yDelta / this.END_EFFECT_DIVIDER];
+            [this.xDeltaFreezed, this.yDeltaFreezed] = [this.xDelta, this.yDelta];
             [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
 
             return false;
@@ -180,9 +180,6 @@ var WobblyEffect = GObject.registerClass({},
             this.j--;
             if (this.j < 0) {
                 this.j = 0;
-            } else if (this.j == this.STOP_COUNTER) {
-                this.xDeltaFreezed = this.xDelta / this.END_EFFECT_DIVIDER;
-                this.yDeltaFreezed = this.yDelta / this.END_EFFECT_DIVIDER;
             } else if (this.j < this.STOP_COUNTER) {
                 this.xDeltaFreezed /= this.END_RESTORE_X_FACTOR;
                 this.yDeltaFreezed /= this.END_RESTORE_Y_FACTOR;
@@ -196,10 +193,20 @@ var WobblyEffect = GObject.registerClass({},
         }
         
         vfunc_deform_vertex(w, h, v) {
-            v.x += (1 - Math.cos(Math.PI * v.y / h / 2)) * this.xDelta / 2 + this.xDeltaStopMoving;
-            v.y += this.xPickedUp < w / 5 ? this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
-                   this.xPickedUp > w * 0.8 ? this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving :
-                   this.yDeltaStretch * v.y / h + Math.pow(v.x - this.xPickedUp, 2) * this.yDelta * (h - v.y) / this.divider + this.yDeltaStopMoving;
+            v.x += (1 - Math.cos(Math.PI * v.y / h / 2)) * this.xDelta / 2 
+                + Math.sign(this.xPickedUp - v.x) * (this.xPickedUp - v.x) / this.width * this.xDeltaStopMoving;
+
+            if (this.xPickedUp < w / 5) {
+                v.y += this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) / (Math.pow(this.width, 2) * this.height)
+                    + Math.sign(this.yPickedUp - v.y) * (this.yPickedUp - v.y) / this.height * this.yDeltaStopMoving;
+            } else if (this.xPickedUp > w * 0.8) {
+                v.y += this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) / (Math.pow(this.width, 2) * this.height)
+                    + Math.sign(this.yPickedUp - v.y) * (this.yPickedUp - v.y) / this.height * this.yDeltaStopMoving;
+            } else {
+                v.y += Math.pow(v.x - this.xPickedUp, 2) * this.yDelta * (h - v.y) / (Math.pow(this.width, 2) * this.height)
+                    + this.yDeltaStretch * v.y / h
+                    + Math.sign(this.yPickedUp - v.y) * (this.yPickedUp - v.y) / this.height * this.yDeltaStopMoving;
+            }
         }
     }
 );
