@@ -5,7 +5,6 @@ let Settings = Extension.imports.settings;
 
 let frictionSlider = null;
 let springSlider = null;
-// let autoRestoreFactor = null;
 let manualRestoreFactor = null;
 let skipFramesBeforeSpringStart = null;
 let maximizeEffectSwitch = null;
@@ -22,9 +21,8 @@ function buildPrefsWidget() {
 		spacing: 20
 	});
 
-	frictionSlider = addSlider(frame, "Friction", config.FRICTION, 1, 99, 0);
-	springSlider = addSlider(frame, "Spring", config.SPRING, 1, 99, 0);
-	// autoRestoreFactor = addBooleanSwitch(frame, "Autotune restore factor", config.AUTO_RESTORE_FACTOR);
+	frictionSlider = addSlider(frame, "Friction", config.FRICTION, 0, 99, 0);
+	springSlider = addSlider(frame, "Spring", config.SPRING, 0, 99, 0);
 	manualRestoreFactor = addSlider(frame, "Restore factor", config.MANUAL_RESTORE_FACTOR, 1, 10, 0);
 	skipFramesBeforeSpringStart = addSlider(frame, "Skip frames before spring starts", config.SKIP_FRAMES_BEFORE_SPRING_START, 1, 20, 0);
 	maximizeEffectSwitch = addBooleanSwitch(frame, "Maximize effect enabled", config.MAXIMIZE_EFFECT_ENABLED);
@@ -42,7 +40,6 @@ function addDefaultButton(frame, config) {
 	button.connect('clicked', function () {
 		config.FRICTION.set(20);
 		config.SPRING.set(40);
-		// config.AUTO_RESTORE_FACTOR.set(false);
 		config.MANUAL_RESTORE_FACTOR.set(4);
 		config.SKIP_FRAMES_BEFORE_SPRING_START.set(1);
 		config.MAXIMIZE_EFFECT_ENABLED.set(true);
@@ -50,7 +47,6 @@ function addDefaultButton(frame, config) {
 
 		frictionSlider.set_value(config.FRICTION.get());
 		springSlider.set_value(config.SPRING.get());
-		// autoRestoreFactor.set_active(config.AUTO_RESTORE_FACTOR.get());
 		manualRestoreFactor.set_value(config.MANUAL_RESTORE_FACTOR.get());
 		skipFramesBeforeSpringStart.set_value(config.SKIP_FRAMES_BEFORE_SPRING_START.get());
 		maximizeEffectSwitch.set_active(config.MAXIMIZE_EFFECT_ENABLED.get());

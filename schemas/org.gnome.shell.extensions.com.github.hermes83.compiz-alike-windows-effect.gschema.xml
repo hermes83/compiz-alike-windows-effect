@@ -4,22 +4,16 @@
 
 		<key type="d" name="friction">
 			<default>20</default>
-			<summary>friction</summary>
+			<summary>Friction</summary>
 			<description/>
 		</key>
 
 		<key type="d" name="spring">
 			<default>40</default>
-			<summary>spring</summary>
-			<description/>
-		</key>		
-<!--
-		<key type="b" name="auto-restore-factor">
-			<default>false</default>
-			<summary>Autotune restore factor</summary>
+			<summary>Spring</summary>
 			<description/>
 		</key>
--->
+
 		<key type="d" name="manual-restore-factor">
 			<default>4</default>
 			<summary>Restore factor</summary>

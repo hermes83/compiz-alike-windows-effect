@@ -55,6 +55,8 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.END_EFFECT_DIVIDER = 4;
             this.END_RESTORE_X_FACTOR = 0.3 * (100 - prefs.SPRING.get()) / 100 + 1;
             this.END_RESTORE_Y_FACTOR = 0.3 * (100 - prefs.SPRING.get()) / 100 + 1;            
+            this.END_FREEZE_X_FACTOR = prefs.SPRING.get() / 100;
+            this.END_FREEZE_Y_FACTOR = prefs.SPRING.get() / 100;            
             this.DELTA_FREEZED = 80 * prefs.SPRING.get() / 100;
             this.STOP_COUNTER = 20;
             this.STOP_COUNTER_EXTRA = prefs.SKIP_FRAMES_BEFORE_SPRING_START.get();
@@ -165,8 +167,8 @@ var WobblyEffect = GObject.registerClass({},
             [this.xOld, this.yOld] = [this.xNew, this.yNew];  
             
             this.j = (this.STOP_COUNTER + this.STOP_COUNTER_EXTRA);
-            // [this.xDeltaFreezed, this.yDeltaFreezed] = [this.xDelta / this.END_EFFECT_DIVIDER, this.yDelta / this.END_EFFECT_DIVIDER];
-            [this.xDeltaFreezed, this.yDeltaFreezed] = [this.xDelta, this.yDelta];
+            this.xDeltaFreezed = this.xDelta * this.END_FREEZE_X_FACTOR;
+            this.yDeltaFreezed = this.yDelta * this.END_FREEZE_Y_FACTOR;
             [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
 
             return false;
