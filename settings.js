@@ -45,14 +45,6 @@ function Prefs() {
 		disconnect: function () { return settings.disconnect.apply(settings, arguments); },
 	};
 
-	// this.AUTO_RESTORE_FACTOR = {
-	// 	key: 'auto-restore-factor',
-	// 	get: function () { return settings.get_boolean(this.key); },
-	// 	set: function (v) { settings.set_boolean(this.key, v); },
-	// 	changed: function (cb) { return settings.connect('changed::' + this.key, cb); },
-	// 	disconnect: function () { return settings.disconnect.apply(settings, arguments); },
-	// };
-
 	this.MANUAL_RESTORE_FACTOR = {
 		key: 'manual-restore-factor',
 		get: function () { return settings.get_double(this.key); },
@@ -85,4 +77,19 @@ function Prefs() {
 		disconnect: function () { return settings.disconnect.apply(settings, arguments); },
 	};
 
+	this.X_TAILS = {
+		key: 'x-tails',
+		get: function () { return settings.get_double(this.key); },
+		set: function (v) { settings.set_double(this.key, v); },
+		changed: function (cb) { return settings.connect('changed::' + this.key, cb); },
+		disconnect: function () { return settings.disconnect.apply(settings, arguments); },
+	};
+
+	this.Y_TAILS = {
+		key: 'y-tails',
+		get: function () { return settings.get_double(this.key); },
+		set: function (v) { settings.set_double(this.key, v); },
+		changed: function (cb) { return settings.connect('changed::' + this.key, cb); },
+		disconnect: function () { return settings.disconnect.apply(settings, arguments); },
+	};
 };
