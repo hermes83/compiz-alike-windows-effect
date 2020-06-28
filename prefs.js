@@ -9,8 +9,8 @@ let manualRestoreFactor = null;
 let skipFramesBeforeSpringStart = null;
 let maximizeEffectSwitch = null;
 let resizeEffectSwitch = null;
-let xTailsSlider = null;
-let yTailsSlider = null;
+let xTilesSlider = null;
+let yTilesSlider = null;
 
 function init() { }
 
@@ -29,8 +29,8 @@ function buildPrefsWidget() {
 	skipFramesBeforeSpringStart = addSlider(frame, "Skip frames before spring starts", config.SKIP_FRAMES_BEFORE_SPRING_START, 1, 20, 0);
 	maximizeEffectSwitch = addBooleanSwitch(frame, "Maximize effect enabled", config.MAXIMIZE_EFFECT_ENABLED);
 	resizeEffectSwitch = addBooleanSwitch(frame, "Resize effect enabled", config.RESIZE_EFFECT_ENABLED);
-	xTailsSlider = addSlider(frame, "X Tails", config.X_TAILS, 3.0, 20.0, 0);
-	yTailsSlider = addSlider(frame, "Y Tails", config.Y_TAILS, 3.0, 20.0, 0);
+	xTilesSlider = addSlider(frame, "X Tiles", config.X_TILES, 3.0, 20.0, 0);
+	yTilesSlider = addSlider(frame, "Y Tiles", config.Y_TILES, 3.0, 20.0, 0);
 
 	addDefaultButton(frame, config);
 
@@ -48,8 +48,8 @@ function addDefaultButton(frame, config) {
 		config.SKIP_FRAMES_BEFORE_SPRING_START.set(1);
 		config.MAXIMIZE_EFFECT_ENABLED.set(true);
 		config.RESIZE_EFFECT_ENABLED.set(true);
-		config.X_TAILS.set(6.0);
-		config.Y_TAILS.set(4.0);
+		config.X_TILES.set(6.0);
+		config.Y_TILES.set(4.0);
 
 		frictionSlider.set_value(config.FRICTION.get());
 		springSlider.set_value(config.SPRING.get());
@@ -57,8 +57,8 @@ function addDefaultButton(frame, config) {
 		skipFramesBeforeSpringStart.set_value(config.SKIP_FRAMES_BEFORE_SPRING_START.get());
 		maximizeEffectSwitch.set_active(config.MAXIMIZE_EFFECT_ENABLED.get());
 		resizeEffectSwitch.set_active(config.RESIZE_EFFECT_ENABLED.get());
-		xTailsSlider.set_value(config.X_TAILS.get());
-		yTailsSlider.set_value(config.Y_TAILS.get());
+		xTilesSlider.set_value(config.X_TILES.get());
+		yTilesSlider.set_value(config.Y_TILES.get());
 	});
 
 	frame.pack_end(button, false, false, 0);

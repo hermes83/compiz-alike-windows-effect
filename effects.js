@@ -61,8 +61,8 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.STOP_COUNTER = 20;
             this.STOP_COUNTER_EXTRA = prefs.SKIP_FRAMES_BEFORE_SPRING_START.get();
             this.RESTORE_FACTOR = 1 + prefs.MANUAL_RESTORE_FACTOR.get() / 10;
-            this.X_TAILS = prefs.X_TAILS.get();
-            this.Y_TAILS = prefs.Y_TAILS.get();
+            this.X_TILES = prefs.X_TILES.get();
+            this.Y_TILES = prefs.Y_TILES.get();
         }
 
         vfunc_set_actor(actor) {
@@ -70,7 +70,7 @@ var AbstractCommonEffect = GObject.registerClass({},
 
             if (actor && !this.effectDisabled) {
                 this.parentActor = actor.get_parent();
-                this.set_n_tiles(this.X_TAILS, this.Y_TAILS);
+                this.set_n_tiles(this.X_TILES, this.Y_TILES);
                 
                 [this.width, this.height] = actor.get_size();
                 
