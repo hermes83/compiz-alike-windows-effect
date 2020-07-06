@@ -76,7 +76,7 @@ function enable() {
 function disable() {    
     global.display.disconnect(grabOpBeginId);
     global.display.disconnect(grabOpEndId);
-    global.display.disconnect(resizeMinMaxOpId);
+    global.window_manager.disconnect(resizeMinMaxOpId);
     
     stop_wobbly_timer();
     
