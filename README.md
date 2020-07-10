@@ -11,6 +11,6 @@ You can install this extension by visiting [the GNOME Shell Extensions page](htt
 [<img src="assets/get-it-on-ego.png" height="100">](https://extensions.gnome.org/extension/2950/compiz-alike-windows-effect/)
 
 ## Alternative
-Please consider this extansion as a fallback.
+Please consider this extension as a fallback.
 If you prefer an effect more similar to the original, you can opts to use the following GNOME Shell Extensions alternative:
 https://extensions.gnome.org/extension/3210/compiz-windows-effect
