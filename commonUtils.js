@@ -8,6 +8,9 @@ const Effects = Me.imports.effects;
 const EFFECT_NAME = 'wobbly-effect';
 const MIN_MAX_EFFECT_NAME = 'min-max-wobbly-effect';
 
+var currentWobblyEffect = null;
+var currentMinMaxEffect = null;
+
 var is_managed_op = function (op) {
     return Meta.GrabOp.MOVING == op ||
            Meta.GrabOp.RESIZING_W == op ||
@@ -35,8 +38,10 @@ var add_actor_wobbly_effect = function (actor, op) {
     if (actor) {
         if (Meta.GrabOp.MOVING == op) {
             actor.add_effect_with_name(EFFECT_NAME, new Effects.WobblyEffect({op: op}));
+            currentWobblyEffect = actor.get_effect(EFFECT_NAME);
         } else {
             actor.add_effect_with_name(EFFECT_NAME, new Effects.ResizeEffect({op: op}));
+            currentWobblyEffect = actor.get_effect(EFFECT_NAME);
         }
     }
 }
@@ -44,6 +49,7 @@ var add_actor_wobbly_effect = function (actor, op) {
 var add_actor_min_max_effect = function (actor, op) { 
     if (actor) {
         actor.add_effect_with_name(MIN_MAX_EFFECT_NAME, new Effects.MinimizeMaximizeEffect({op: op}));
+        currentMinMaxEffect = actor.get_effect(MIN_MAX_EFFECT_NAME);
     }
 }
 
@@ -63,6 +69,11 @@ var destroy_actor_wobbly_effect = function (actor) {
             effect.destroy();
         }
     }
+
+    if (currentWobblyEffect) {
+        currentWobblyEffect.destroy();
+    }
+    currentWobblyEffect = null;
 }
 
 var destroy_actor_min_max_effect = function (actor) {
@@ -72,4 +83,9 @@ var destroy_actor_min_max_effect = function (actor) {
             effect.destroy();
         }
     }
+
+    if (currentMinMaxEffect) {
+        currentMinMaxEffect.destroy();
+    }
+    currentMinMaxEffect = null;
 }
