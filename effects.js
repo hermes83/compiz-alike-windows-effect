@@ -4,6 +4,8 @@ const { GObject, Clutter, Meta } = imports.gi;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Extension = ExtensionUtils.getCurrentExtension();
 const Settings = Extension.imports.settings;
+const Me = ExtensionUtils.getCurrentExtension();
+const Utils = Me.imports.commonUtils;
 
 const CLUTTER_TIMELINE_DURATION = 1000 * 1000;
 const CORNER_RESIZING_DIVIDER = 6;
@@ -75,16 +77,20 @@ var AbstractCommonEffect = GObject.registerClass({},
                 
                 [this.width, this.height] = actor.get_size();
                 
-                this.allocationChangedEvent = actor.connect('allocation-changed', this.on_actor_event.bind(this));
+                this.allocationChangedEvent = actor.connect(Utils.is_old_shell_versions() ? 'allocation-changed' : 'notify::allocation', this.on_actor_event.bind(this));
                 this.paintEvent = actor.connect('paint', () => {});
                 
-                this.start_timer(this.on_tick_elapsed.bind(this));
+                this.start_timer(this.on_tick_elapsed.bind(this), actor);
             }
         }
 
-        start_timer(timerFunction) {
+        start_timer(timerFunction, actor) {
             this.stop_timer();
-            this.timerId = new Clutter.Timeline({ duration: CLUTTER_TIMELINE_DURATION });
+			if (Utils.is_old_shell_versions()) {
+				this.timerId = new Clutter.Timeline({ duration: CLUTTER_TIMELINE_DURATION });
+			} else {
+				this.timerId = new Clutter.Timeline({ duration: CLUTTER_TIMELINE_DURATION, actor: actor });
+			}
             this.newFrameEvent = this.timerId.connect('new-frame', timerFunction);
             this.timerId.start();      
         }
@@ -121,12 +127,12 @@ var AbstractCommonEffect = GObject.registerClass({},
             }
         }
 
-        stop() {
+        stop(actor) {
             [this.xDeltaStop, this.yDeltaStop] = [this.xDelta * 1.5, this.yDelta * 1.5];
             [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
             this.i = 0;
             
-            this.start_timer(this.on_stop_tick_elapsed.bind(this));
+            this.start_timer(this.on_stop_tick_elapsed.bind(this), actor);
         }
 
         on_stop_tick_elapsed(timer, msecs) {
@@ -151,7 +157,7 @@ var WobblyEffect = GObject.registerClass({},
         }
         
         on_actor_event(actor, allocation, flags) {
-            [this.xNew, this.yNew] = allocation.get_origin();
+			[this.xNew, this.yNew] = [actor.get_x(), actor.get_y()];
             [this.width, this.height] = actor.get_size();
             
             if (this.initOldValues) {

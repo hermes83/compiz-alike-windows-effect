@@ -4,12 +4,23 @@ const Meta = imports.gi.Meta;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Effects = Me.imports.effects;
+const Config = imports.misc.config;
 
 const EFFECT_NAME = 'wobbly-effect';
 const MIN_MAX_EFFECT_NAME = 'min-max-wobbly-effect';
 
+const IS_OLD_SHELL_VERSIONS = Config.PACKAGE_VERSION.startsWith("3.36") ||
+		Config.PACKAGE_VERSION.startsWith("3.34") ||
+		Config.PACKAGE_VERSION.startsWith("3.32") ||
+		Config.PACKAGE_VERSION.startsWith("3.30") ||
+		Config.PACKAGE_VERSION.startsWith("3.28");
+
 var currentWobblyEffect = null;
 var currentMinMaxEffect = null;
+
+var is_old_shell_versions = function () {
+    return IS_OLD_SHELL_VERSIONS;
+}
 
 var is_managed_op = function (op) {
     return Meta.GrabOp.MOVING == op ||
@@ -57,7 +68,7 @@ var stop_actor_wobbly_effect = function (actor) {
     if (actor) {
         let effect = actor.get_effect(EFFECT_NAME);
         if (effect) {
-            effect.stop();
+            effect.stop(actor);
         }
     }
 }
