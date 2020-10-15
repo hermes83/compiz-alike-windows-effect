@@ -10,6 +10,8 @@ const TIMEOUT_DELAY = 1500;
 let grabOpBeginId;
 let grabOpEndId;
 let resizeMinMaxOpId;
+let minimizeId;
+let unminimizeId;
 let timeoutWobblyId;
 let timeoutMinMaxId;
 let originalSpeed;
@@ -70,6 +72,20 @@ function enable() {
 
             return false;
         });
+	});
+	
+	minimizeId = global.window_manager.connect("minimize", (e, actor) => {
+		if (Utils.has_wobbly_effect(actor)) {
+			stop_wobbly_timer();
+			Utils.destroy_actor_wobbly_effect(actor);
+		}
+	});
+	
+	unminimizeId = global.window_manager.connect("unminimize", (e, actor) => {
+		if (Utils.has_wobbly_effect(actor)) {
+			stop_wobbly_timer();
+			Utils.destroy_actor_wobbly_effect(actor);
+		}
     });
 }
 

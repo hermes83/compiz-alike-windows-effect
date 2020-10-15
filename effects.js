@@ -75,7 +75,7 @@ var AbstractCommonEffect = GObject.registerClass({},
                 this.parentActor = actor.get_parent();
                 this.set_n_tiles(this.X_TILES, this.Y_TILES);
                 
-                [this.width, this.height] = actor.get_size();
+				[this.width, this.height] = actor.get_size();
                 
                 this.allocationChangedEvent = actor.connect(Utils.is_old_shell_versions() ? 'allocation-changed' : 'notify::allocation', this.on_actor_event.bind(this));
                 this.paintEvent = actor.connect('paint', () => {});
@@ -158,16 +158,14 @@ var WobblyEffect = GObject.registerClass({},
         
         on_actor_event(actor, allocation, flags) {
 			[this.xNew, this.yNew] = [actor.get_x(), actor.get_y()];
-            [this.width, this.height] = actor.get_size();
+			[this.width, this.height] = actor.get_size();
             
             if (this.initOldValues) {
-                let [xMouse, yMouse] = global.get_pointer();
+				let [xMouse, yMouse] = global.get_pointer();
 
                 [this.xOld, this.yOld] = [this.xNew, this.yNew];
-                [this.xPickedUp, this.yPickedUp] = [xMouse - this.xNew, yMouse - this.yNew];
-
-                this.yCoefficient = (1 - this.yPickedUp / this.height) / (Math.pow(this.width, 2) * this.height);
-
+				[this.xPickedUp, this.yPickedUp] = [xMouse - this.xNew, yMouse - this.yNew];
+				this.yCoefficient = (1 - this.yPickedUp / this.height) / (Math.pow(this.width, 2) * this.height);
                 this.initOldValues = false;
             }
 
@@ -180,7 +178,7 @@ var WobblyEffect = GObject.registerClass({},
             this.j = (this.STOP_COUNTER + this.STOP_COUNTER_EXTRA);
             this.xDeltaFreezed = this.xDelta * this.END_FREEZE_X_FACTOR;
             this.yDeltaFreezed = this.yDelta * this.END_FREEZE_Y_FACTOR;
-            [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
+			[this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
 
             return false;
         }
@@ -206,19 +204,19 @@ var WobblyEffect = GObject.registerClass({},
         }
         
         vfunc_deform_vertex(w, h, v) {
-            v.x += (1 - Math.cos(Math.PI * v.y / h / 2)) * this.xDelta / 2
-                + Math.abs(this.xPickedUp - v.x) / w * this.xDeltaStopMoving;
+            v.x += (1 - Math.cos(Math.PI * v.ty / 2)) * this.xDelta / 2
+				+ Math.abs(this.xPickedUp - this.width * v.tx) / this.width * this.xDeltaStopMoving;
 
-            if (this.xPickedUp < w / 5) {
-                v.y += this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) * this.yCoefficient
-                    + Math.abs(this.yPickedUp - v.y) / h * this.yDeltaStopMoving;
-            } else if (this.xPickedUp > w * 0.8) {
-                v.y += this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) * this.yCoefficient
-                    + Math.abs(this.yPickedUp - v.y) / h * this.yDeltaStopMoving;
+            if (this.xPickedUp < this.width / 5) {
+                v.y += this.yDelta - Math.pow(this.width - this.width * v.tx, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
+                    + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
+            } else if (this.xPickedUp > this.width * 0.8) {
+                v.y += this.yDelta - Math.pow(this.width * v.tx, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
+                    + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
             } else {
-                v.y += Math.pow(v.x - this.xPickedUp, 2) * this.yDelta * (h - v.y) * this.yCoefficient
-                    + this.yDeltaStretch * v.y / h
-                    + Math.abs(this.yPickedUp - v.y) / h * this.yDeltaStopMoving;
+                v.y += Math.pow(this.width * v.tx - this.xPickedUp, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
+                    + this.yDeltaStretch * v.ty
+                    + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
             }            
         }
     }
@@ -248,7 +246,7 @@ var ResizeEffect = GObject.registerClass({},
             this.xDelta += (this.xOld - this.xNew) * this.X_MULTIPLIER;
             this.yDelta += (this.yOld - this.yNew) * this.Y_MULTIPLIER;
 
-            [this.xOld, this.yOld] = [this.xNew, this.yNew];            
+			[this.xOld, this.yOld] = [this.xNew, this.yNew];
         }
 
         on_tick_elapsed(timer, msecs) {
