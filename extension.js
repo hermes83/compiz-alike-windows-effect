@@ -16,6 +16,8 @@ let timeoutWobblyId;
 let timeoutMinMaxId;
 let originalSpeed;
 
+function init() {}
+
 function enable() {
     grabOpBeginId = global.display.connect('grab-op-begin', (display, screen, window, op) => {
         if (!Utils.is_managed_op(op)) {
