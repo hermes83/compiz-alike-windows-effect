@@ -19,6 +19,7 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.allocationChangedEvent = null;
             this.paintEvent = null;
             this.newFrameEvent = null;
+            this.resizeEvent = null;
             this.parentActor = null;
             this.operationType = params.op;
             this.effectDisabled = false;
@@ -79,6 +80,7 @@ var AbstractCommonEffect = GObject.registerClass({},
                 
                 this.allocationChangedEvent = actor.connect(Utils.is_old_shell_versions() ? 'allocation-changed' : 'notify::allocation', this.on_actor_event.bind(this));
                 this.paintEvent = actor.connect('paint', () => {});
+                this.resizeEvent = actor.connect('notify::size', this.resized.bind(this));
                 
                 this.start_timer(this.on_tick_elapsed.bind(this), actor);
             }
@@ -106,6 +108,8 @@ var AbstractCommonEffect = GObject.registerClass({},
             }
         }
 
+        resized(actor, params) {}
+
         destroy() {
             this.stop_timer();
 
@@ -121,6 +125,11 @@ var AbstractCommonEffect = GObject.registerClass({},
                 if (this.allocationChangedEvent) {
                     actor.disconnect(this.allocationChangedEvent);
                     this.allocationChangedEvent = null;
+                }
+
+                if (this.resizeEvent) {
+                    actor.disconnect(this.resizeEvent);
+                    this.resizeEvent = null;
                 }
 
                 actor.remove_effect(this);
@@ -181,6 +190,16 @@ var WobblyEffect = GObject.registerClass({},
 			[this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
 
             return false;
+        }
+
+        resized(actor, params) {
+            let newWidth, newHeight;
+            [newWidth, newHeight] = actor.get_size();
+            if (this.width <= newWidth && this.height <= newHeight) {
+                this.destroy();
+            } else {
+                [this.xNew, this.yNew] = [newWidth, newHeight];
+            }
         }
 
         on_tick_elapsed(timer, msec) {            
