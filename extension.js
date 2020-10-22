@@ -74,20 +74,20 @@ function enable() {
 
             return false;
         });
-	});
-	
-	minimizeId = global.window_manager.connect("minimize", (e, actor) => {
-		if (Utils.has_wobbly_effect(actor)) {
-			stop_wobbly_timer();
-			Utils.destroy_actor_wobbly_effect(actor);
-		}
-	});
-	
-	unminimizeId = global.window_manager.connect("unminimize", (e, actor) => {
-		if (Utils.has_wobbly_effect(actor)) {
-			stop_wobbly_timer();
-			Utils.destroy_actor_wobbly_effect(actor);
-		}
+    });
+    
+    minimizeId = global.window_manager.connect("minimize", (e, actor) => {
+        if (Utils.has_wobbly_effect(actor)) {
+            stop_wobbly_timer();
+            Utils.destroy_actor_wobbly_effect(actor);
+        }
+    });
+    
+    unminimizeId = global.window_manager.connect("unminimize", (e, actor) => {
+        if (Utils.has_wobbly_effect(actor)) {
+            stop_wobbly_timer();
+            Utils.destroy_actor_wobbly_effect(actor);
+        }
     });
 }
 
