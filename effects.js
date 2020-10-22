@@ -195,7 +195,7 @@ var WobblyEffect = GObject.registerClass({},
         resized(actor, params) {
             let newWidth, newHeight;
             [newWidth, newHeight] = actor.get_size();
-            if (this.width <= newWidth && this.height <= newHeight) {
+            if (this.width <= newWidth && this.height <= newHeight && (this.width != newWidth || this.height != newHeight)) {
                 this.destroy();
             } else {
                 [this.xNew, this.yNew] = [newWidth, newHeight];
