@@ -1,3 +1,26 @@
+/*
+ * Compiz-alike-windows-effect for GNOME Shell
+ *
+ * Copyright (C) 2020
+ *     Mauro Pepe <https://github.com/hermes83/compiz-alike-windows-effect>
+ *
+ * This file is part of the gnome-shell extension Compiz-alike-windows-effect.
+ *
+ * gnome-shell extension Compiz-alike-windows-effect is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * gnome-shell extension Compiz-alike-windows-effect is distributed in the hope that it
+ * will be useful, but WITHOUT ANY WARRANTY; without even the
+ * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with gnome-shell extension Compiz-alike-windows-effect.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
 'use strict';
 
 const { GLib, Meta } = imports.gi;
@@ -15,43 +38,30 @@ let unminimizeId;
 let timeoutWobblyId;
 let timeoutMinMaxId;
 let originalSpeed;
+let destroyId;
 
 function init() {}
 
 function enable() {
-    grabOpBeginId = global.display.connect('grab-op-begin', (display, screen, window, op) => {
-        if (!Utils.is_managed_op(op)) {
-            return;
-        }
+    if (Utils.is_3_xx_shell_version()) {
+        grabOpBeginId = global.display.connect('grab-op-begin', (display, screen, window, op) => {
+            grabStart(window, op);
+        });
+    } else {
+        grabOpBeginId = global.display.connect('grab-op-begin', (display, window, op) => {
+            grabStart(window, op);
+        });
+    }
 
-        let actor = Utils.get_actor(window);
-        if (actor) {
-            stop_wobbly_timer();            
-            stop_min_max_timer();
-            
-            Utils.destroy_actor_wobbly_effect(actor);
-            Utils.destroy_actor_min_max_effect(actor);
-            Utils.add_actor_wobbly_effect(actor, op);
-        }
-    });
-
-    grabOpEndId = global.display.connect('grab-op-end', (display, screen, window, op) => {  
-        let actor = Utils.get_actor(window);
-        if (actor) {
-            Utils.stop_actor_wobbly_effect(actor);
-
-            timeoutWobblyId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TIMEOUT_DELAY, () => {
-                stop_wobbly_timer();
-
-                let actor = Utils.get_actor(window);
-                if (actor) {
-                    Utils.destroy_actor_wobbly_effect(actor);
-                }
-
-                return false;
-            });
-        }
-    });
+    if (Utils.is_3_xx_shell_version()) {
+        grabOpEndId = global.display.connect('grab-op-end', (display, screen, window, op) => {  
+            grabEnd(window, op);
+        });
+    } else {
+        grabOpEndId = global.display.connect('grab-op-end', (display, window, op) => {  
+            grabEnd(window, op);
+        });
+    }
 
     resizeMinMaxOpId = global.window_manager.connect('size-change', (e, actor, op) => {
         if (op == 1 && Utils.has_wobbly_effect(actor)) {
@@ -89,12 +99,21 @@ function enable() {
             Utils.destroy_actor_wobbly_effect(actor);
         }
     });
+
+    destroyId = global.window_manager.connect("destroy", (e, actor) => {
+        if (Utils.has_wobbly_effect(actor)) {
+            stop_wobbly_timer();
+            Utils.destroy_actor_wobbly_effect(actor);
+            Utils.destroy_actor_min_max_effect(actor);
+        }
+    });
 }
 
 function disable() {    
     global.display.disconnect(grabOpBeginId);
     global.display.disconnect(grabOpEndId);
     global.window_manager.disconnect(resizeMinMaxOpId);
+    global.window_manager.disconnect(destroyId);
     
     stop_wobbly_timer();
     
@@ -115,5 +134,39 @@ function stop_min_max_timer() {
     if (timeoutMinMaxId) {
         GLib.source_remove(timeoutMinMaxId);
         timeoutMinMaxId = 0;
+    }
+}
+
+function grabStart(window, op) {
+    if (!Utils.is_managed_op(op)) {
+        return;
+    }
+
+    let actor = Utils.get_actor(window);
+    if (actor) {
+        stop_wobbly_timer();            
+        stop_min_max_timer();
+        
+        Utils.destroy_actor_wobbly_effect(actor);
+        Utils.destroy_actor_min_max_effect(actor);
+        Utils.add_actor_wobbly_effect(actor, op);
+    }
+}
+
+function grabEnd(window, op) {
+    let actor = Utils.get_actor(window);
+    if (actor) {
+        Utils.stop_actor_wobbly_effect(actor);
+
+        timeoutWobblyId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TIMEOUT_DELAY, () => {
+            stop_wobbly_timer();
+
+            let actor = Utils.get_actor(window);
+            if (actor) {
+                Utils.destroy_actor_wobbly_effect(actor);
+            }
+
+            return false;
+        });
     }
 }
