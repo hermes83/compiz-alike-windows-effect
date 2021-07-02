@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-    <schema id="org.gnome.shell.extensions.com.github.hermes83.compiz-alike-windows-effect" path="/org/gnome/shell/extensions/ncom/github/hermes83/compiz-alike-windows-effect/">
+    <schema id="org.gnome.shell.extensions.com.github.hermes83.compiz-alike-windows-effect" path="/org/gnome/shell/extensions/compiz-alike-windows-effect/">
 
         <key type="d" name="friction">
             <default>20</default>
