@@ -1,5 +1,5 @@
 {
-  "description": "Wobbly windows effect inspired by the Compiz ones\n\nNB\nIn case of update error please restart Gnome Shell (on Xorg press ALT+F2 then write r and press enter, on Wayland end the session and log in again)\n\n-----------------------------------\n ALTERNATIVE\n-----------------------------------\nalternative extension to obtain an effect more similar to the original:\nhttps://extensions.gnome.org/extension/3210/compiz-windows-effect/",  
+  "description": "Wobbly windows effect inspired by the Compiz ones\n\nNB\nIn case of update error please restart Gnome Shell (on Xorg press ALT+F2 then write r and press enter, on Wayland end the session and log in again)\n\n-----------------------------------\n ALTERNATIVE\n-----------------------------------\nalternative extension to obtain an effect more similar to the original:\nhttps://extensions.gnome.org/extension/3210/compiz-windows-effect/",
   "name": "Compiz alike windows effect",
   "shell-version": [
     "3.28",
@@ -8,9 +8,10 @@
     "3.34",
     "3.36",
     "3.38",    
-    "40"
+    "40",
+    "41"
   ],
   "url": "https://github.com/hermes83/compiz-alike-windows-effect",
   "uuid": "compiz-alike-windows-effect@hermes83.github.com",
-  "version": 20
+  "version": 21
 }
