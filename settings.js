@@ -100,6 +100,14 @@ function Prefs() {
         disconnect: function () { return settings.disconnect.apply(settings, arguments); },
     };
 
+    this.MOVE_EFFECT_ENABLED = {
+        key: 'move-effect-enabled',
+        get: function () { return settings.get_boolean(this.key); },
+        set: function (v) { settings.set_boolean(this.key, v); },
+        changed: function (cb) { return settings.connect('changed::' + this.key, cb); },
+        disconnect: function () { return settings.disconnect.apply(settings, arguments); },
+    };
+
     this.X_TILES = {
         key: 'x-tiles',
         get: function () { return settings.get_double(this.key); },

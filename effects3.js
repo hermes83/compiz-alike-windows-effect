@@ -27,8 +27,7 @@ const { GObject, Clutter, Meta } = imports.gi;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Extension = ExtensionUtils.getCurrentExtension();
 const Settings = Extension.imports.settings;
-const Me = ExtensionUtils.getCurrentExtension();
-const Utils = Me.imports.commonUtils;
+const Utils = Extension.imports.commonUtils;
 
 const CLUTTER_TIMELINE_DURATION = 1000 * 1000;
 const CORNER_RESIZING_DIVIDER = 6;

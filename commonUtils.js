@@ -25,8 +25,9 @@
 
 const Meta = imports.gi.Meta;
 const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+const Extension = ExtensionUtils.getCurrentExtension();
 const Config = imports.misc.config;
+const Settings = Extension.imports.settings;
 
 const EFFECT_NAME = 'wobbly-effect';
 const MIN_MAX_EFFECT_NAME = 'min-max-wobbly-effect';
@@ -35,7 +36,7 @@ const IS_3_XX_SHELL_VERSION = Config.PACKAGE_VERSION.startsWith("3");
 const IS_3_38_SHELL_VERSION = Config.PACKAGE_VERSION.startsWith("3.38");
 const HAS_GLOBAL_DISPLAY = !Config.PACKAGE_VERSION.startsWith("3.28");
 
-const Effects = IS_3_XX_SHELL_VERSION ? Me.imports.effects3 : Me.imports.effects;
+const Effects = IS_3_XX_SHELL_VERSION ? Extension.imports.effects3 : Extension.imports.effects;
 
 var currentWobblyAlikeEffect = null;
 var currentMinMaxEffect = null;
@@ -53,15 +54,17 @@ var has_global_display = function () {
 }
 
 var is_managed_op = function (op) {
-    return Meta.GrabOp.MOVING == op ||
-           Meta.GrabOp.RESIZING_W == op ||
-           Meta.GrabOp.RESIZING_E == op ||
-           Meta.GrabOp.RESIZING_S == op ||
-           Meta.GrabOp.RESIZING_N == op ||
-           Meta.GrabOp.RESIZING_NW == op ||
-           Meta.GrabOp.RESIZING_NE == op ||
-           Meta.GrabOp.RESIZING_SE == op ||
-           Meta.GrabOp.RESIZING_SW == op;
+    let prefs = (new Settings.Prefs());
+
+    if (prefs.MOVE_EFFECT_ENABLED.get() && Meta.GrabOp.MOVING == op) {
+        return true;
+    }
+
+    if (prefs.RESIZE_EFFECT_ENABLED.get() && (Meta.GrabOp.RESIZING_W == op || Meta.GrabOp.RESIZING_E == op || Meta.GrabOp.RESIZING_S == op || Meta.GrabOp.RESIZING_N == op || Meta.GrabOp.RESIZING_NW == op || Meta.GrabOp.RESIZING_NE == op || Meta.GrabOp.RESIZING_SE == op || Meta.GrabOp.RESIZING_SW == op)) {
+        return true;
+    }
+
+    return false;
 }
 
 var get_actor = function(window) {

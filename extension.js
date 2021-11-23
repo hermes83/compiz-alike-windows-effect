@@ -138,10 +138,6 @@ function stop_min_max_timer() {
 }
 
 function grabStart(window, op) {
-    if (!Utils.is_managed_op(op)) {
-        return;
-    }
-
     let actor = Utils.get_actor(window);
     if (actor) {
         stop_wobbly_timer();            
@@ -149,7 +145,10 @@ function grabStart(window, op) {
         
         Utils.destroy_actor_wobbly_effect(actor);
         Utils.destroy_actor_min_max_effect(actor);
-        Utils.add_actor_wobbly_effect(actor, op);
+
+        if (Utils.is_managed_op(op)) {
+            Utils.add_actor_wobbly_effect(actor, op);
+        }
     }
 }
 
