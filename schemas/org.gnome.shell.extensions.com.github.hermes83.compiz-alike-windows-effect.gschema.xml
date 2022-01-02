@@ -38,6 +38,12 @@
             <description/>
         </key>
 
+        <key type="b" name="move-effect-enabled">
+            <default>true</default>
+            <summary>Move effect enabled</summary>
+            <description/>
+        </key>
+
         <key type="d" name="x-tiles">
             <default>6.0</default>
             <summary>X Tiles</summary>

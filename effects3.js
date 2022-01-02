@@ -39,8 +39,10 @@ var AbstractCommonCompizAlikeWinEffect = GObject.registerClass({},
             super._init();
 
             this.allocationChangedEvent = null;
+            this.paintEvent = null;
             this.newFrameEvent = null;
             this.resizeEvent = null;
+            this.parentActor = null;
             this.operationType = params.op;
             this.effectDisabled = false;
             this.timerId = null;
@@ -87,50 +89,29 @@ var AbstractCommonCompizAlikeWinEffect = GObject.registerClass({},
             this.RESTORE_FACTOR = 1 + prefs.MANUAL_RESTORE_FACTOR.get() / 10;
             this.X_TILES = prefs.X_TILES.get();
             this.Y_TILES = prefs.Y_TILES.get();
-
-            this.set_n_tiles(this.X_TILES, this.Y_TILES);
-
-            this.initialized = false;
         }
 
         vfunc_set_actor(actor) {
             super.vfunc_set_actor(actor);
-        }
 
-        vfunc_post_paint(paintNode, paintContext) {
-            super.vfunc_post_paint(paintNode, paintContext);
-
-            let [success, pv_width, pv_height] = this.get_target_size();
-            if (success) {
-                if (!this.effectDisabled && !this.initialized) {
-                    this.initialized = true;
-                    [this.width, this.height] = [pv_width, pv_height]
-                    this.init();
-                } else if (!this.effectDisabled && (this.width !== pv_width || this.height !== pv_height)) {
-                    let [oldWidth, oldHeight] = [this.width, this.height];
-                    [this.width, this.height] = [pv_width, pv_height];
-                    this.resize(this.width, this.height, oldWidth, oldHeight);
-                }
-
+            if (actor && !this.effectDisabled) {
+                this.parentActor = actor.get_parent();
+                this.set_n_tiles(this.X_TILES, this.Y_TILES);
+                
+                [this.width, this.height] = actor.get_size();
+                
+                this.allocationChangedEvent = this.actor.connect(Utils.is_3_38_shell_version() ? 'notify::allocation' : 'allocation-changed', this.on_actor_event.bind(this));
+                this.paintEvent = actor.connect('paint', () => {});
+                this.resizeEvent = actor.connect('notify::size', this.resized.bind(this));
+                
+                this.start_timer(this.on_tick_elapsed.bind(this), actor);
             }
-
-            return false;
         }
-
-        vfunc_modify_paint_volume(pv) {
-            return false;
-        }
-
-        init() {
-            this.allocationChangedEvent = this.actor.connect('notify::allocation', this.on_actor_event.bind(this));
-            this.start_timer(this.on_tick_elapsed.bind(this), this.actor);
-        }
-
-        resize(newWidth, newHeight, oldWidth, oldHeight) {}
 
         start_timer(timerFunction, actor) {
             this.stop_timer();
-            this.timerId = new Clutter.Timeline({ duration: CLUTTER_TIMELINE_DURATION, actor: actor });
+            this.timerId = Utils.is_3_38_shell_version() ? new Clutter.Timeline({ actor: actor }) : new Clutter.Timeline();
+            this.timerId.set_duration(CLUTTER_TIMELINE_DURATION);
             this.newFrameEvent = this.timerId.connect('new-frame', timerFunction);
             this.timerId.start();      
         }
@@ -141,19 +122,33 @@ var AbstractCommonCompizAlikeWinEffect = GObject.registerClass({},
                     this.timerId.disconnect(this.newFrameEvent);
                     this.newFrameEvent = null;
                 }
-                this.timerId.stop();
+                this.timerId.run_dispose();
                 this.timerId = null;
             }
         }
 
+        resized(actor, params) {}
+
         destroy() {
             this.stop_timer();
+
+            this.parentActor = null;
             
             let actor = this.get_actor();
-            if (actor) {            
+            if (actor) {
+                if (this.paintEvent) {
+                    actor.disconnect(this.paintEvent);
+                    this.paintEvent = null;
+                }
+            
                 if (this.allocationChangedEvent) {
                     actor.disconnect(this.allocationChangedEvent);
                     this.allocationChangedEvent = null;
+                }
+
+                if (this.resizeEvent) {
+                    actor.disconnect(this.resizeEvent);
+                    this.resizeEvent = null;
                 }
 
                 actor.remove_effect(this);
@@ -191,6 +186,7 @@ var WobblyAlikeEffect = GObject.registerClass({},
         
         on_actor_event(actor, allocation, flags) {
             [this.xNew, this.yNew] = [actor.get_x(), actor.get_y()];
+            [this.width, this.height] = actor.get_size();
             
             if (this.initOldValues) {
                 let [xMouse, yMouse] = global.get_pointer();
@@ -215,13 +211,13 @@ var WobblyAlikeEffect = GObject.registerClass({},
             return false;
         }
 
-        resize(newWidth, newHeight, oldWidth, oldHeight) {
-            if (this.actor.get_x() == 0 && this.actor.get_y() == 0 && oldWidth <= newWidth && oldHeight <= newHeight && (oldWidth != newWidth || oldHeight != newHeight)) {
-                //actor maximized
+        resized(actor, params) {
+            let newWidth, newHeight;
+            [newWidth, newHeight] = actor.get_size();
+            if (this.width <= newWidth && this.height <= newHeight && (this.width != newWidth || this.height != newHeight)) {
                 this.destroy();
             } else {
                 [this.xNew, this.yNew] = [newWidth, newHeight];
-                this.initOldValues = true;
             }
         }
 
@@ -246,22 +242,20 @@ var WobblyAlikeEffect = GObject.registerClass({},
         }
         
         vfunc_deform_vertex(w, h, v) {
-            if (this.initialized) {
-                v.x += (1 - Math.cos(Math.PI * v.ty / 2)) * this.xDelta / 2
-                    + Math.abs(this.xPickedUp - this.width * v.tx) / this.width * this.xDeltaStopMoving;
+            v.x += (1 - Math.cos(Math.PI * v.ty / 2)) * this.xDelta / 2
+                + Math.abs(this.xPickedUp - this.width * v.tx) / this.width * this.xDeltaStopMoving;
 
-                if (this.xPickedUp < this.width / 5) {
-                    v.y += this.yDelta - Math.pow(this.width - this.width * v.tx, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
-                        + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
-                } else if (this.xPickedUp > this.width * 0.8) {
-                    v.y += this.yDelta - Math.pow(this.width * v.tx, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
-                        + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
-                } else {
-                    v.y += Math.pow(this.width * v.tx - this.xPickedUp, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
-                        + this.yDeltaStretch * v.ty
-                        + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
-                }
-            }
+            if (this.xPickedUp < this.width / 5) {
+                v.y += this.yDelta - Math.pow(this.width - this.width * v.tx, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
+                    + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
+            } else if (this.xPickedUp > this.width * 0.8) {
+                v.y += this.yDelta - Math.pow(this.width * v.tx, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
+                    + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
+            } else {
+                v.y += Math.pow(this.width * v.tx - this.xPickedUp, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
+                    + this.yDeltaStretch * v.ty
+                    + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
+            }            
         }
     }
 );
